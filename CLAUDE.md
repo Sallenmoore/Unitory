@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-Everything runs inside Docker Compose — the app depends on Mongo + Redis + the `autonomous` submodule (editable install at `/app/autonomous` in the image), so running outside the container is not the supported path.
+Everything runs inside Docker Compose — the app depends on Mongo + Redis and the `autonomous-app` package (installed from PyPI via [requirements.txt](requirements.txt)), so running outside the container is not the supported path.
 
 ```bash
 docker compose up --build             # full dev stack with --reload uvicorn
@@ -13,7 +13,7 @@ docker compose run --rm web pytest tests/test_markdown.py::test_name  # single t
 docker compose logs -f worker         # tail the RQ worker
 ```
 
-The `web` service mounts `./app`, `./autonomous`, and `./worker` as volumes so edits are live. Python 3.13+ is required.
+The `web` service mounts `./app` and `./worker` as volumes so edits are live. Python 3.13+ is required.
 
 ### Test tiers
 
@@ -28,7 +28,7 @@ When adding a test, pick the tier. Unit tests must not import anything that open
 
 ### Dependency on the `autonomous` framework
 
-The `autonomous/` sibling directory is a submodule/editable-install that provides the ORM (`AutoModel` + `autoattr` typed fields backing MongoDB), auth primitives (`autonomous.auth.user.User`), and the RQ-backed task runner (`AutoTasks`). **It is not always checked out locally** but is installed into the Docker image and required for import. Models in [app/models/](app/models/) inherit from `AutoModel`; [AppUser](app/models/user.py) subclasses the framework `User` specifically to stop `authenticate()` from clobbering admin-promoted roles on each login and to bootstrap the first user as admin. Tests add `autonomous/src` to `sys.path` in [tests/conftest.py](tests/conftest.py).
+The `autonomous-app` PyPI package provides the ORM (`AutoModel` + `autoattr` typed fields backing MongoDB), auth primitives (`autonomous.auth.user.User`), and the RQ-backed task runner (`AutoTasks`). Pinned in [requirements.txt](requirements.txt). Models in [app/models/](app/models/) inherit from `AutoModel`; [AppUser](app/models/user.py) subclasses the framework `User` specifically to stop `authenticate()` from clobbering admin-promoted roles on each login and to bootstrap the first user as admin.
 
 ### Request flow
 

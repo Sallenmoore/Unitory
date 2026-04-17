@@ -4,7 +4,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "autonomous" / "src"))
 
 os.environ.setdefault("SESSION_SECRET", "test-secret")
 os.environ.setdefault("DB_HOST", "mongo")
