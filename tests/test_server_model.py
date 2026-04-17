@@ -28,7 +28,10 @@ def _mongo_available() -> bool:
         return False
 
 
-pytestmark = pytest.mark.skipif(not _mongo_available(), reason="MongoDB not reachable")
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skipif(not _mongo_available(), reason="MongoDB not reachable"),
+]
 
 
 def test_server_summary_shape():

@@ -1,8 +1,12 @@
 from pathlib import Path
 
+import pytest
+
 from app.services.node_exporter import parse_metrics
 
 FIXTURE = Path(__file__).parent / "fixtures" / "node_exporter_sample.txt"
+
+pytestmark = pytest.mark.unit
 
 
 def test_parse_metrics_extracts_system_info():
