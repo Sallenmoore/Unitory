@@ -80,6 +80,7 @@ ai/<feature-slug>          (per-task branch, cut from ai-development)
   git push
   ```
 
+- Before opening a PR, run `make test-unit` locally to catch breakage early — CI will do the same but local feedback is faster.
 - After a `dev → main` merge, tag a release: `git tag vX.Y.Z && git push origin vX.Y.Z`. The `release.yml` workflow creates the GitHub Release with auto-generated notes.
 
 ### Workflows
