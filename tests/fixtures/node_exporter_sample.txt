@@ -1,0 +1,27 @@
+# HELP node_uname_info Labeled system information as provided by the uname system call.
+# TYPE node_uname_info gauge
+node_uname_info{domainname="(none)",machine="x86_64",nodename="host1.binghamton.edu",release="5.14.0-362.8.1.el9_3.x86_64",sysname="Linux",version="#1 SMP PREEMPT_DYNAMIC Wed Sep 13"} 1
+# HELP node_os_info A metric with a constant '1' value labeled by os information.
+# TYPE node_os_info gauge
+node_os_info{id="rocky",id_like="rhel centos fedora",name="Rocky Linux",pretty_name="Rocky Linux 9.3 (Blue Onyx)",version="9.3 (Blue Onyx)",version_id="9.3"} 1
+# HELP node_dmi_info A metric with a constant '1' value labeled by dmi information.
+# TYPE node_dmi_info gauge
+node_dmi_info{bios_date="10/10/2023",bios_vendor="Dell Inc.",board_vendor="Dell Inc.",chassis_vendor="Dell Inc.",product_name="PowerEdge R740",product_serial="ABC12345",system_vendor="Dell Inc."} 1
+# HELP node_memory_MemTotal_bytes Memory information field MemTotal_bytes.
+# TYPE node_memory_MemTotal_bytes gauge
+node_memory_MemTotal_bytes 1.34925033472e+11
+# HELP node_cpu_seconds_total Seconds the CPUs spent in each mode.
+# TYPE node_cpu_seconds_total counter
+node_cpu_seconds_total{cpu="0",mode="idle"} 12345.6
+node_cpu_seconds_total{cpu="0",mode="user"} 234.5
+node_cpu_seconds_total{cpu="1",mode="idle"} 12340.0
+node_cpu_seconds_total{cpu="1",mode="user"} 230.0
+# HELP node_filesystem_size_bytes Filesystem size in bytes.
+# TYPE node_filesystem_size_bytes gauge
+node_filesystem_size_bytes{device="/dev/sda1",fstype="xfs",mountpoint="/"} 5.0e+11
+node_filesystem_size_bytes{device="/dev/sda2",fstype="xfs",mountpoint="/var"} 1.0e+11
+node_filesystem_size_bytes{device="tmpfs",fstype="tmpfs",mountpoint="/dev/shm"} 64000000
+# HELP node_network_address_info Node network address info.
+# TYPE node_network_address_info gauge
+node_network_address_info{address="10.0.1.5",device="eth0"} 1
+node_network_address_info{address="10.0.1.6",device="eth1"} 1

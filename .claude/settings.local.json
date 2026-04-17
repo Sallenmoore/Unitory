@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m compileall -q app tests)",
+      "Bash(python3 -c \"import sys; print\\(sys.version_info\\)\")",
+      "Bash(echo \"exit=$?\")",
+      "Bash(python3 -m venv .venv-test)",
+      "Bash(.venv-test/bin/pip install *)",
+      "Bash(.venv-test/bin/python -m pytest tests/test_discovery_parser.py tests/test_markdown.py -v)",
+      "Bash(.venv-test/bin/python -c ' *)"
+    ]
+  }
+}

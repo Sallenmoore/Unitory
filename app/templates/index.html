@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="grid-x grid-padding-x">
+  <div class="cell">
+    <h1>Server inventory</h1>
+  </div>
+  <div class="cell">
+    <label>
+      Quick search
+      <input type="search"
+             name="q"
+             placeholder="Start typing a hostname…"
+             hx-get="/servers/search"
+             hx-trigger="keyup changed delay:200ms, search"
+             hx-target="#search-results"
+             hx-swap="innerHTML"
+             autofocus>
+    </label>
+    <div id="search-results"></div>
+  </div>
+
+  <div class="cell">
+    <h2>Recently updated</h2>
+    {% if recent %}
+      <table class="hover stack">
+        <thead>
+          <tr><th>Hostname</th><th>Env</th><th>Status</th><th>OS</th><th>Updated</th></tr>
+        </thead>
+        <tbody>
+          {% for s in recent %}
+            <tr>
+              <td><a href="/servers/{{ s.pk }}">{{ s.hostname }}</a></td>
+              <td>{{ s.environment or "" }}</td>
+              <td>{{ s.status or "" }}</td>
+              <td>{{ s.os_name or "" }} {{ s.os_version or "" }}</td>
+              <td>{{ s.last_updated.strftime("%Y-%m-%d %H:%M") if s.last_updated else "" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">No servers yet. <a href="/servers/new">Add one</a> or run autodiscovery from the admin panel.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

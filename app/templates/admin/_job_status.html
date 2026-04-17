@@ -1,0 +1,11 @@
+{# Returned by GET /admin/discovery/jobs/{id} — swaps the whole <tr>. #}
+<tr id="job-{{ job.pk }}"
+    {% if job.state in ("queued", "running") %}
+      hx-get="/admin/discovery/jobs/{{ job.pk }}"
+      hx-trigger="every 2s"
+      hx-swap="outerHTML"
+    {% endif %}>
+  {% with j=job %}
+    {% include "admin/_job_status_row.html" %}
+  {% endwith %}
+</tr>

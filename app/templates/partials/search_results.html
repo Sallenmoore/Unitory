@@ -1,0 +1,14 @@
+{% if servers %}
+  <ul class="menu vertical search-results">
+    {% for s in servers %}
+      <li>
+        <a href="/servers/{{ s.pk }}">
+          <strong>{{ s.hostname }}</strong>
+          <span class="muted">· {{ s.environment or "" }} · {{ s.status or "" }} · {{ s.os_name or "" }}</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% elif q %}
+  <p class="muted">No servers match &ldquo;{{ q }}&rdquo;.</p>
+{% endif %}

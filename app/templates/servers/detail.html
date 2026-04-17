@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}{{ server.hostname }}{% endblock %}
+{% block content %}
+<div class="grid-x grid-padding-x">
+  <div class="cell">
+    <h1>{{ server.hostname }}
+      <small class="muted">{{ server.fqdn or "" }}</small>
+    </h1>
+    <p>
+      <span class="status status-{{ server.status }}">{{ server.status }}</span>
+      <span class="env env-{{ server.environment }}">{{ server.environment }}</span>
+      <span class="muted">· {{ server.server_type or "physical" }}</span>
+    </p>
+    {% if request.state.user and request.state.user.is_editor %}
+      <p>
+        <a href="/servers/{{ server.pk }}/edit" class="button">Edit</a>
+        {% if request.state.user.is_admin %}
+          <form method="post" action="/servers/{{ server.pk }}/delete" style="display:inline"
+                onsubmit="return confirm('Delete {{ server.hostname }}?')">
+            <button type="submit" class="button alert">Delete</button>
+          </form>
+        {% endif %}
+        <a href="/api/servers/{{ server.pk }}" class="button secondary" target="_blank">JSON</a>
+      </p>
+    {% endif %}
+  </div>
+
+  <div class="cell medium-6">
+    <h3>Ops</h3>
+    <dl>
+      <dt>Owner</dt><dd>{{ server.owner or "—" }}</dd>
+      <dt>Purpose</dt><dd>{{ server.purpose or "—" }}</dd>
+      <dt>Patch window</dt><dd>{{ server.patch_window or "—" }}</dd>
+      <dt>Warranty</dt><dd>{{ server.warranty_expires.strftime("%Y-%m-%d") if server.warranty_expires else "—" }}</dd>
+      <dt>Tags</dt>
+      <dd>{% for t in (server.tags or []) %}<span class="tag">{{ t }}</span>{% else %}—{% endfor %}</dd>
+      <dt>Compliance</dt>
+      <dd>{% for t in (server.compliance_tags or []) %}<span class="tag compliance">{{ t }}</span>{% else %}—{% endfor %}</dd>
+    </dl>
+
+    <h3>Hardware</h3>
+    <dl>
+      <dt>Vendor / Product</dt>
+      <dd>{{ server.vendor or "—" }} {% if server.product_name %} / {{ server.product_name }}{% endif %}</dd>
+      <dt>Serial / Asset</dt>
+      <dd>{{ server.serial_number or "—" }} {% if server.asset_tag %} · Asset {{ server.asset_tag }}{% endif %}</dd>
+      <dt>CPU</dt><dd>{{ server.cpu_model or "—" }} {% if server.cpu_cores %} ({{ server.cpu_cores }} cores){% endif %}</dd>
+      <dt>RAM</dt><dd>{{ (server.ram_bytes / 1073741824) | round(1) if server.ram_bytes else "—" }} GB</dd>
+      <dt>Disk</dt><dd>{{ (server.disk_bytes / 1073741824) | round(1) if server.disk_bytes else "—" }} GB</dd>
+    </dl>
+  </div>
+
+  <div class="cell medium-6">
+    <h3>System</h3>
+    <dl>
+      <dt>OS</dt><dd>{{ server.os_name or "—" }} {{ server.os_version or "" }}</dd>
+      <dt>Kernel</dt><dd>{{ server.kernel or "—" }}</dd>
+      <dt>Hypervisor</dt><dd>{{ server.hypervisor or "—" }}</dd>
+    </dl>
+
+    <h3>Network</h3>
+    <dl>
+      <dt>IPs</dt><dd>{{ (server.ip_addresses or []) | join(", ") or "—" }}</dd>
+      <dt>MACs</dt><dd>{{ (server.mac_addresses or []) | join(", ") or "—" }}</dd>
+      <dt>VLAN</dt><dd>{{ server.vlan or "—" }}</dd>
+    </dl>
+
+    <h3>Location</h3>
+    <dl>
+      <dt>Rack</dt><dd>{{ server.rack or "—" }}</dd>
+      <dt>Location</dt><dd>{{ server.location or "—" }}</dd>
+    </dl>
+
+    <h3>Discovery</h3>
+    <dl>
+      <dt>Last discovered</dt>
+      <dd>{{ server.last_discovered.strftime("%Y-%m-%d %H:%M") if server.last_discovered else "never" }}</dd>
+    </dl>
+  </div>
+
+  <div class="cell">
+    <h3>Notes</h3>
+    <article class="markdown-body">
+      {{ server.notes | markdown | safe if server.notes else '<p class="muted">No notes yet.</p>' | safe }}
+    </article>
+  </div>
+</div>
+{% endblock %}

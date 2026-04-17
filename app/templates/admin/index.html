@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<h1>Admin</h1>
+<div class="grid-x grid-padding-x">
+  <div class="cell medium-6">
+    <div class="card">
+      <div class="card-section">
+        <h4>Users</h4>
+        <p>Manage user accounts and roles (viewer / editor / admin).</p>
+        <a href="/admin/users" class="button">Manage users</a>
+      </div>
+    </div>
+  </div>
+  <div class="cell medium-6">
+    <div class="card">
+      <div class="card-section">
+        <h4>Autodiscovery</h4>
+        <p>Scrape <code>node_exporter</code> on a list of hostnames and upsert the resulting server records.</p>
+        <a href="/admin/discovery" class="button">Run discovery</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

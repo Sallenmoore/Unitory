@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Servers{% endblock %}
+{% block content %}
+<div class="grid-x grid-padding-x">
+  <div class="cell small-12">
+    <h1>Servers</h1>
+  </div>
+
+  <div class="cell small-12">
+    <form method="get" action="/servers" class="grid-x grid-padding-x filters">
+      <div class="cell small-12 medium-6">
+        <label>Search hostname
+          <input type="search" name="q" value="{{ filters.q }}" placeholder="hostname contains…">
+        </label>
+      </div>
+      <div class="cell small-6 medium-3">
+        <label>Environment
+          <select name="environment">
+            <option value="">Any</option>
+            {% for e in environments %}
+              <option value="{{ e }}" {% if e == filters.environment %}selected{% endif %}>{{ e }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <div class="cell small-6 medium-3">
+        <label>Status
+          <select name="status">
+            <option value="">Any</option>
+            {% for st in statuses %}
+              <option value="{{ st }}" {% if st == filters.status %}selected{% endif %}>{{ st }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <div class="cell">
+        <button type="submit" class="button">Filter</button>
+        <a href="/servers" class="button secondary">Reset</a>
+        {% if request.state.user and request.state.user.is_editor %}
+          <a href="/servers/new" class="button success float-right">+ New server</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <div class="cell small-12">
+    {% if servers %}
+      <table class="hover stack">
+        <thead>
+          <tr>
+            <th>Hostname</th><th>Env</th><th>Status</th><th>Type</th>
+            <th>OS</th><th>Owner</th><th>Tags</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in servers %}
+            <tr>
+              <td><a href="/servers/{{ s.pk }}">{{ s.hostname }}</a></td>
+              <td>{{ s.environment or "" }}</td>
+              <td>{{ s.status or "" }}</td>
+              <td>{{ s.server_type or "" }}</td>
+              <td>{{ s.os_name or "" }} {{ s.os_version or "" }}</td>
+              <td>{{ s.owner or "" }}</td>
+              <td>{% for t in (s.tags or []) %}<span class="tag">{{ t }}</span>{% endfor %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">No servers match.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

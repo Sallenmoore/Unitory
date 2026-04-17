@@ -1,0 +1,62 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    networks: [unitory]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks: [unitory]
+
+  web:
+    build: .
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    env_file: .env
+    environment:
+      DB_HOST: mongo
+      DB_PORT: "27017"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./autonomous:/app/autonomous
+      - ./worker:/app/worker
+    depends_on:
+      - mongo
+      - redis
+    networks: [unitory]
+
+  worker:
+    build: .
+    restart: unless-stopped
+    command: /app/worker/entrypoint.sh
+    env_file: .env
+    environment:
+      DB_HOST: mongo
+      DB_PORT: "27017"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    volumes:
+      - ./app:/app/app
+      - ./autonomous:/app/autonomous
+      - ./worker:/app/worker
+    depends_on:
+      - mongo
+      - redis
+    networks: [unitory]
+
+volumes:
+  mongo_data:
+
+networks:
+  unitory:
+    driver: bridge

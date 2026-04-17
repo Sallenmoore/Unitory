@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Unitory{% endblock %} · Unitory</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/css/foundation.min.css"
+        integrity="sha256-ogmFxjqiTMnZhxCqVmcqTvjfe1Y/ec4WaRj/aQPvn+I="
+        crossorigin="anonymous">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="https://unpkg.com/htmx.org@1.9.12"
+          integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
+          crossorigin="anonymous" defer></script>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <ul class="menu">
+        <li class="menu-text"><a href="/">Unitory</a></li>
+        <li><a href="/servers">Servers</a></li>
+        <li><a href="/servers/new">+ New</a></li>
+        {% if request.state.user and request.state.user.is_admin %}
+          <li><a href="/admin">Admin</a></li>
+        {% endif %}
+      </ul>
+    </div>
+    <div class="top-bar-right">
+      <ul class="menu">
+        {% if request.state.user %}
+          <li class="menu-text">{{ request.state.user.email }} <span class="role-badge role-{{ request.state.user.role }}">{{ request.state.user.role }}</span></li>
+          <li><a href="/auth/logout">Sign out</a></li>
+        {% else %}
+          <li><a href="/auth/login">Sign in</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <main class="grid-container main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="grid-container footer">
+    <small>Unitory · Binghamton University</small>
+  </footer>
+</body>
+</html>

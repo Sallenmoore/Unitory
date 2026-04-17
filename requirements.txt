@@ -1,0 +1,22 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+jinja2>=3.1
+python-multipart>=0.0.9
+itsdangerous>=2.2
+authlib>=1.3
+httpx>=0.27
+markdown2>=2.5
+bleach>=6.1
+prometheus-client>=0.20
+
+pymongo>=4.8
+python-dotenv>=1.0
+blinker>=1.8
+redis>=5.0
+rq>=1.16
+# autonomous.db pulls these in transitively
+numpy>=1.26
+requests>=2.31
+dateparser>=1.2
+python-slugify>=8.0
+
