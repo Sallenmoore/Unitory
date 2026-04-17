@@ -1,4 +1,8 @@
+import pytest
+
 from app.services.markdown import render_markdown
+
+pytestmark = pytest.mark.unit
 
 
 def test_renders_headings_and_paragraphs():

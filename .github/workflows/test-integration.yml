@@ -1,0 +1,45 @@
+name: test-integration
+
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * *"
+
+jobs:
+  test-integration:
+    name: test-integration
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: test
+          MONGO_INITDB_ROOT_PASSWORD: test
+        ports:
+          - 27017:27017
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    env:
+      SESSION_SECRET: test-secret
+      DB_HOST: localhost
+      DB_PORT: "27017"
+      DB_USERNAME: test
+      DB_PASSWORD: test
+      DB_DB: unitory_test
+      REDIS_HOST: localhost
+      REDIS_PORT: "6379"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+          pip install -e .
+      - name: Run integration tests
+        run: pytest -m integration

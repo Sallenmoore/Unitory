@@ -1,0 +1,96 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+Everything runs inside Docker Compose — the app depends on Mongo + Redis + the `autonomous` submodule (editable install at `/app/autonomous` in the image), so running outside the container is not the supported path.
+
+```bash
+docker compose up --build             # full dev stack with --reload uvicorn
+docker compose run --rm web pytest    # run the test suite
+docker compose run --rm web pytest tests/test_markdown.py::test_name  # single test
+docker compose logs -f worker         # tail the RQ worker
+```
+
+The `web` service mounts `./app`, `./autonomous`, and `./worker` as volumes so edits are live. Python 3.13+ is required.
+
+### Test tiers
+
+Tests are split into two tiers via pytest markers (registered in [pyproject.toml](pyproject.toml); `--strict-markers` is enforced):
+
+- `pytest -m unit` — pure logic, no external services. CI runs on every PR to `dev` and `main`.
+- `pytest -m integration` — needs Mongo + Redis. CI runs only on PRs to `main` and nightly. Locally: `make test-integration` spins up the compose stack first.
+
+When adding a test, pick the tier. Unit tests must not import anything that opens a DB/Redis connection at import time.
+
+## Architecture
+
+### Dependency on the `autonomous` framework
+
+The `autonomous/` sibling directory is a submodule/editable-install that provides the ORM (`AutoModel` + `autoattr` typed fields backing MongoDB), auth primitives (`autonomous.auth.user.User`), and the RQ-backed task runner (`AutoTasks`). **It is not always checked out locally** but is installed into the Docker image and required for import. Models in [app/models/](app/models/) inherit from `AutoModel`; [AppUser](app/models/user.py) subclasses the framework `User` specifically to stop `authenticate()` from clobbering admin-promoted roles on each login and to bootstrap the first user as admin. Tests add `autonomous/src` to `sys.path` in [tests/conftest.py](tests/conftest.py).
+
+### Request flow
+
+[app/main.py](app/main.py) mounts four routers — `auth`, `api`, `admin`, `web` — and registers custom 401/403 handlers that branch on `/api/` path prefix: API paths get JSON/text errors, HTML paths redirect to `/auth/login` or render `403.html`. Auth is cookie-session (`SessionMiddleware`) storing only `user_pk`; the current user is resolved per-request by [get_current_user](app/deps.py) and role-gated via `require_viewer` / `require_editor` / `require_admin` dependencies. Templates receive the user via `request.state.user` (attached by the same dependencies).
+
+### Roles and the first-admin invariant
+
+Three roles in [app/models/user.py](app/models/user.py): `viewer` → `editor` → `admin`. `AppUser.authenticate` assigns `admin` to the *first* user to log in (when no admins exist) and `viewer` to everyone after; on repeat logins the existing role is preserved. Admins cannot demote or delete themselves (see [app/routes/admin.py](app/routes/admin.py)).
+
+### Autodiscovery: the human-fields-are-sacred rule
+
+[app/services/discovery.py](app/services/discovery.py) enqueues RQ jobs that scrape `http://<host>:<port>/metrics` (node_exporter) and upsert a `Server`. The critical invariant is [DISCOVERY_FIELDS](app/models/server.py) — a hard-coded frozenset of attribute names (hardware, network, OS, DMI data). Only fields in this set are allowed to be overwritten by discovery; human-authored fields (`owner`, `notes`, `rack`, `tags`, `compliance_tags`, `purpose`, etc.) are never touched by a scan. When adding a new `Server` attribute, decide deliberately whether it belongs in `DISCOVERY_FIELDS`.
+
+Discovery imports the ORM *inside* `scan_hosts` (not at module top) so the Mongo connection is opened in the RQ worker process, not at import time. The worker is a separate Compose service running `rq worker high default low` via [worker/entrypoint.sh](worker/entrypoint.sh) and shares the image with `web`.
+
+### Node exporter parsing
+
+[app/services/node_exporter.py](app/services/node_exporter.py) flattens Prometheus metric families into a Server-shaped dict. Note that `prometheus_client` strips the `_total` suffix from counter names, so code looks up both `node_cpu_seconds` and `node_cpu_seconds_total`. Missing metrics produce missing keys (not errors) — the upsert step then skips empty values so partial scans don't wipe previously-known data.
+
+### HTMX + server-rendered markdown
+
+The UI is Jinja2 + Foundation 6 + HTMX. Live search (`/servers/search`) and the discovery job status poll return HTML partials from `templates/partials/` and `templates/admin/_job_status.html`. Notes are markdown rendered server-side by [render_markdown](app/services/markdown.py) (markdown2 → bleach allowlist sanitization); the same function is registered as a Jinja filter in [app/deps.py](app/deps.py) *and* exposed via `POST /servers/preview-notes` for live preview.
+
+## CI/CD
+
+### Pipeline shape
+
+```text
+ai/<feature-slug>          (per-task branch, cut from ai-development)
+        │
+        ▼  PR (lint + unit tests required)
+      dev                  (integration tier; PRs to main cut from here)
+        │
+        ▼  PR (lint + unit + integration tests required, 1 approval)
+      main                 (protected; default branch)
+        │
+        ▼  git tag vX.Y.Z
+```
+
+### AI contribution conventions
+
+- AI-authored branches are named `ai/<slug>` and cut from `ai-development`.
+- PRs target `dev`. Squash-merge preferred to keep `dev` history readable.
+- `ai-development` is periodically fast-forwarded to `dev` so future AI branches start from the latest integrated state:
+
+  ```bash
+  git checkout ai-development
+  git merge --ff-only origin/dev
+  git push
+  ```
+
+- After a `dev → main` merge, tag a release: `git tag vX.Y.Z && git push origin vX.Y.Z`. The `release.yml` workflow creates the GitHub Release with auto-generated notes.
+
+### Workflows
+
+- [.github/workflows/lint.yml](.github/workflows/lint.yml) — flake8 hard-error subset (E9/F63/F7/F82) + soft report. Runs on PRs to `dev` and `main`.
+- [.github/workflows/test-unit.yml](.github/workflows/test-unit.yml) — `pytest -m unit` on Python 3.13 and 3.14. Runs on PRs to `dev` and `main`.
+- [.github/workflows/test-integration.yml](.github/workflows/test-integration.yml) — `pytest -m integration` against Mongo + Redis service containers. Runs on PRs to `main` and nightly (06:00 UTC).
+- [.github/workflows/release.yml](.github/workflows/release.yml) — creates a GitHub Release on `v*` tag push.
+
+## Conventions
+
+- Environment config is centralized in [app/config.py](app/config.py) (`Settings` dataclass, `lru_cache`d via `get_settings()`). `SESSION_SECRET` is required — startup raises if unset.
+- Model query patterns use the framework's `Model.objects`, `Model.get(pk)`, `Model.find(**kwargs)`, `Model.search(...)` — not raw pymongo.
+- When writing tests that need Mongo, `mongomock` is in `requirements-dev.txt`; unit tests in [tests/](tests/) avoid the DB entirely where possible (parser and markdown tests are pure functions).

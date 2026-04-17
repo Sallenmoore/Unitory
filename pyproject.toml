@@ -22,4 +22,8 @@ include = ["app*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "-ra"
+addopts = "-ra --strict-markers"
+markers = [
+    "unit: runs without external services (pure logic, mocks only)",
+    "integration: requires MongoDB / Redis (docker compose or GitHub services)",
+]
