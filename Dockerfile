@@ -11,14 +11,12 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /app/
-RUN pip install -r requirements.txt
-
-COPY autonomous /app/autonomous
-RUN pip install --no-deps -e /app/autonomous
+COPY requirements.txt requirements-dev.txt pyproject.toml /app/
+RUN pip install -r requirements.txt -r requirements-dev.txt
 
 COPY app /app/app
 COPY worker /app/worker
+COPY tests /app/tests
 
 RUN chmod +x /app/worker/entrypoint.sh
 

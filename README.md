@@ -2,8 +2,9 @@
 
 Server inventory management for Binghamton University Linux servers.
 
-Stack: FastAPI · HTMX · Foundation 6 · MongoDB · Redis/RQ · built on the local
-[`autonomous`](./autonomous) framework for models, tasks, and user auth.
+Stack: FastAPI · HTMX · Foundation 6 · MongoDB · Redis/RQ · built on the
+[`autonomous-app`](https://pypi.org/project/autonomous-app/) framework for
+models, tasks, and user auth.
 
 ## Quick start
 
@@ -37,9 +38,6 @@ and upserts a `Server` record for each host. Human-entered fields (owner,
 notes, rack, tags, compliance) are never overwritten by discovery.
 
 ## Development
-
-The `autonomous/` directory is a live submodule — edit it freely; changes are
-picked up via editable install and the `--reload` dev server.
 
 ```bash
 # run tests inside the web container
