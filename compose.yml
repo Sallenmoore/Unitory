@@ -8,6 +8,12 @@ services:
     volumes:
       - mongo_data:/data/db
     networks: [unitory]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok", "--username", "${DB_USERNAME}", "--password", "${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
@@ -31,8 +37,10 @@ services:
       - ./autonomous:/app/autonomous
       - ./worker:/app/worker
     depends_on:
-      - mongo
-      - redis
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks: [unitory]
 
   worker:
@@ -50,8 +58,10 @@ services:
       - ./autonomous:/app/autonomous
       - ./worker:/app/worker
     depends_on:
-      - mongo
-      - redis
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks: [unitory]
 
 volumes:

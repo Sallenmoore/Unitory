@@ -47,3 +47,25 @@ docker compose run --rm web pytest
 ```
 
 See [compose.yml](compose.yml) for service definitions.
+
+## Troubleshooting
+
+### Authentication failures during OAuth callback
+
+**Symptom**: `pymongo.errors.ServerSelectionTimeoutError: mongo:27017: [Errno -2] Name or service not known` during Google OAuth login callback.
+
+**Cause**: The `web` service started before MongoDB was ready to accept connections.
+
+**Solution**: The compose.yml includes a health check for MongoDB and startup dependencies for web/worker services. If you encounter this error:
+
+1. Stop and restart the stack: `docker compose down && docker compose up`
+2. Check MongoDB logs: `docker compose logs mongo`
+3. Verify MongoDB is healthy: `docker compose ps` should show `mongo` as `healthy`
+
+If the issue persists, increase the health check retries or start_period in compose.yml:
+
+```yaml
+healthcheck:
+  retries: 20        # increase from 10
+  start_period: 20s  # increase from 10s
+```

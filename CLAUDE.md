@@ -15,6 +15,10 @@ docker compose logs -f worker         # tail the RQ worker
 
 The `web` service mounts `./app`, `./autonomous`, and `./worker` as volumes so edits are live. Python 3.13+ is required.
 
+### Startup dependencies
+
+The `web` and `worker` services wait for MongoDB to be healthy before starting (via `depends_on` with `service_healthy` condition). MongoDB health is checked via `mongosh --eval "db.adminCommand('ping')"` every 5 seconds with a 10-second start period and 10 retries. This prevents authentication failures during OAuth callbacks when MongoDB hasn't finished initializing.
+
 ### Test tiers
 
 Tests are split into two tiers via pytest markers (registered in [pyproject.toml](pyproject.toml); `--strict-markers` is enforced):
