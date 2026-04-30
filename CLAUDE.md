@@ -4,16 +4,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-Everything runs inside Docker Compose — the app depends on Mongo + Redis and the `autonomous-app` package (installed from PyPI via [requirements.txt](requirements.txt)), so running outside the container is not the supported path.
+This compose file is **not standalone** — it expects `mongo`, `redis`, `sops-decrypt`, the `docknet` network, and the `secrets` volume to come from the parent [dockerStacks](../) tree. Bring the app up via the parent driver, not `docker compose` directly:
 
 ```bash
-docker compose up --build             # full dev stack with --reload uvicorn
-docker compose run --rm web pytest    # run the test suite
-docker compose run --rm web pytest tests/test_markdown.py::test_name  # single test
-docker compose logs -f worker         # tail the RQ worker
+# from /home/itsadmin/dockerStacks/
+./containers up unitory worker        # web + RQ worker (and their deps via depends_on)
+./containers logs worker              # tail the RQ worker (service key is 'worker', container is 'unitory-worker')
+./containers down unitory worker
+./containers rebuild unitory          # build --no-cache
 ```
 
-The `web` service mounts `./app` and `./worker` as volumes so edits are live. Python 3.13+ is required.
+The compose **service keys** in [compose.yml](compose.yml) are `unitory` (web) and `worker` (RQ); the worker's `container_name` is `unitory-worker`, but the docker-compose service key — what `./containers <action> <svc>` takes — is just `worker`. Both services share one image and bind-mount `./app` and `./worker` for live reload (`uvicorn --reload`). `REDIS_PASSWORD` is read from `/run/secrets/redis.pass` (decrypted by `sops-decrypt`) at container start — see the `command:` line in [compose.yml](compose.yml).
+
+Tests run on the **host**, not in the container — that is also how CI runs them:
+
+```bash
+pip install -r requirements.txt -r requirements-dev.txt && pip install -e .
+make test-unit                                       # pytest -m unit
+pytest -m unit tests/test_markdown.py::test_name     # single test
+```
+
+`make test-integration` is currently broken (it `cd`s into `tests/` expecting a compose file that doesn't exist). For local integration runs, point Mongo/Redis env vars at running instances and call `pytest -m integration` directly — CI does this with GitHub Actions service containers (see [test-integration.yml](.github/workflows/test-integration.yml)). Python 3.13+ is required.
+
+`.env` is gitignored and must exist for compose to parse — copy [.env.example](.env.example) and fill in the placeholders (`SESSION_SECRET`, `DB_PASSWORD`, `GOOGLE_AUTH_CLIENT_ID`, `GOOGLE_AUTH_CLIENT_SECRET`). All accepted keys are read in [app/config.py](app/config.py).
+
+### Startup dependencies
+
+`unitory` and `unitory-worker` wait on `sops-decrypt` (healthy), `mongo` (healthy), and `redis` (started). The mongo healthcheck lives in [dockerStacks/common/mongo/compose.yml](../common/mongo/compose.yml), not here — don't add a duplicate. This ordering prevents the OAuth-callback `ServerSelectionTimeoutError` that motivated the gating in the first place.
 
 ### Test tiers
 
@@ -28,7 +45,7 @@ When adding a test, pick the tier. Unit tests must not import anything that open
 
 ### Dependency on the `autonomous` framework
 
-The `autonomous-app` PyPI package provides the ORM (`AutoModel` + `autoattr` typed fields backing MongoDB), auth primitives (`autonomous.auth.user.User`), and the RQ-backed task runner (`AutoTasks`). Pinned in [requirements.txt](requirements.txt). Models in [app/models/](app/models/) inherit from `AutoModel`; [AppUser](app/models/user.py) subclasses the framework `User` specifically to stop `authenticate()` from clobbering admin-promoted roles on each login and to bootstrap the first user as admin.
+The `autonomous-app` package (PyPI, pinned `>=0.3.113` in [requirements.txt](requirements.txt)) provides the ORM (`AutoModel` + `autoattr` typed fields backing MongoDB), auth primitives (`autonomous.auth.user.User`), and the RQ-backed task runner (`AutoTasks`). It is installed into the image — it is **not** mounted from a sibling directory; the Dockerfile only `COPY`s `app/` and `worker/`. Models in [app/models/](app/models/) inherit from `AutoModel`; [AppUser](app/models/user.py) subclasses the framework `User` specifically to stop `authenticate()` from clobbering admin-promoted roles on each login and to bootstrap the first user as admin. [tests/conftest.py](tests/conftest.py) preemptively inserts `autonomous/src` onto `sys.path` so a locally-checked-out copy (when one exists alongside the repo) shadows the installed package — useful when iterating on the framework, irrelevant otherwise.
 
 ### Request flow
 
