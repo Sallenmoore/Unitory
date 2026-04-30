@@ -53,6 +53,10 @@ pytest -m unit tests/test_markdown.py::test_name     # single test
 
 `unitory-worker` has no HTTP surface; its compose healthcheck runs [worker/healthcheck.py](worker/healthcheck.py), a tiny script that pings Redis with the same credentials the worker uses. Mongo is intentionally not pinged from the worker — the worker's "healthy" state is "process running, listening on Redis." Mongo failures surface as job failures, not container-level unhealthy.
 
+### Startup dependencies
+
+The `web` and `worker` services wait for MongoDB to be healthy before starting (via `depends_on` with `service_healthy` condition). MongoDB health is checked via `mongosh --eval "db.adminCommand('ping')"` every 5 seconds with a 10-second start period and 10 retries. This prevents authentication failures during OAuth callbacks when MongoDB hasn't finished initializing.
+
 ### Test tiers
 
 Tests are split into two tiers via pytest markers (registered in [pyproject.toml](pyproject.toml); `--strict-markers` is enforced):
