@@ -1,62 +1,51 @@
 services:
-  mongo:
-    image: mongo:7
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - mongo_data:/data/db
-    networks: [unitory]
-
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    networks: [unitory]
-
-  web:
-    build: .
-    restart: unless-stopped
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    env_file: .env
-    environment:
-      DB_HOST: mongo
-      DB_PORT: "27017"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./app:/app/app
-      - ./worker:/app/worker
-      - ./tests:/app/tests
-    depends_on:
-      - mongo
-      - redis
-    networks: [unitory]
-
-  worker:
-    build: .
-    restart: unless-stopped
-    command: /app/worker/entrypoint.sh
-    env_file: .env
-    environment:
-      DB_HOST: mongo
-      DB_PORT: "27017"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-    volumes:
-      - ./app:/app/app
-      - ./worker:/app/worker
-      - ./tests:/app/tests
-    depends_on:
-      - mongo
-      - redis
-    networks: [unitory]
-
-volumes:
-  mongo_data:
-
-networks:
   unitory:
-    driver: bridge
+    build:
+      context: ../inventory
+    container_name: unitory
+    restart: unless-stopped
+    command: sh -c 'export REDIS_PASSWORD=$$(cat /run/secrets/redis.pass); exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload'
+    env_file: ../inventory/.env
+    environment:
+      DB_HOST: mongo
+      DB_PORT: "27017"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    volumes:
+      - ../inventory/app:/app/app
+      - ../inventory/worker:/app/worker
+      - secrets:/run/secrets:ro
+    depends_on:
+      sops-decrypt:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - docknet
+  worker:
+    build:
+      context: ../inventory
+    container_name: unitory-worker
+    restart: unless-stopped
+    command: sh -c 'export REDIS_PASSWORD=$$(cat /run/secrets/redis.pass); exec /app/worker/entrypoint.sh'
+    env_file: ../inventory/.env
+    environment:
+      DB_HOST: mongo
+      DB_PORT: "27017"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    volumes:
+      - ../inventory/app:/app/app
+      - ../inventory/worker:/app/worker
+      - secrets:/run/secrets:ro
+    depends_on:
+      sops-decrypt:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - docknet
