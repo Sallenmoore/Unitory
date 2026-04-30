@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "unitory"
-version = "0.1.0"
+version = "0.2.0"
 description = "Server inventory management for Binghamton University Linux servers."
 requires-python = ">=3.13"
 readme = "README.md"
