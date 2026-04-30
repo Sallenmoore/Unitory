@@ -1,20 +1,16 @@
 {% extends "base.html" %}
-{% block title %}403 Forbidden{% endblock %}
+{% block title %}Forbidden{% endblock %}
 {% block content %}
 
-<section class="hero-error">
-  <div class="num reveal">403</div>
-  <div class="reveal reveal-1">
-    <span class="lbl">RESPONSE · CHECKPOINT</span>
-    <h1 style="margin: 0.4rem 0 1rem;">Hold</h1>
-    <p style="font-size: 1.05rem; max-width: 38ch;">{{ message or "You don't have authorization to access that page." }}</p>
-    <div class="btn-row" style="margin-top: 1.5rem;">
-      <a href="/" class="btn primary">Back to manifest</a>
-      {% if not request.state.user %}
-        <a href="/auth/login" class="btn ghost">Sign in</a>
-      {% endif %}
-    </div>
+<div class="hero-error">
+  <h1>403</h1>
+  <p class="lead text-muted mb-4" style="max-width: 36rem;">{{ message or "You don't have authorization to access that page." }}</p>
+  <div class="d-flex gap-2 justify-content-center">
+    <a href="/" class="btn btn-primary">Back to overview</a>
+    {% if not request.state.user %}
+      <a href="/auth/login" class="btn btn-outline-secondary">Sign in</a>
+    {% endif %}
   </div>
-</section>
+</div>
 
 {% endblock %}

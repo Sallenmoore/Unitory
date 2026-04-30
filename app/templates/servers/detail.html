@@ -1,129 +1,157 @@
 {% extends "base.html" %}
 {% block title %}{{ server.hostname }}{% endblock %}
+{% block breadcrumb %}
+  <li class="breadcrumb-item"><a href="/">Overview</a></li>
+  <li class="breadcrumb-item"><a href="/servers">Fleet</a></li>
+  <li class="breadcrumb-item active" aria-current="page">{{ server.hostname }}</li>
+{% endblock %}
 {% block content %}
 
-<header class="page-head">
-  <div class="title">
-    <span class="meta reveal">
-      <a class="crumbs bare" href="/servers">FLEET</a>
-      <span>RECORD <b>#{{ server.pk | string | upper }}</b></span>
-    </span>
-    <h1 class="reveal reveal-1">{{ server.hostname }}</h1>
-    <small class="reveal reveal-2">{{ server.fqdn or "no fqdn on file" }}</small>
-    <div class="cluster reveal reveal-3" style="margin-top: 0.5rem;">
-      {% if server.status %}<span class="pill status-{{ server.status }}">{{ server.status }}</span>{% endif %}
-      {% if server.environment %}<span class="pill env-{{ server.environment }}">{{ server.environment }}</span>{% endif %}
-      <span class="pill">{{ server.server_type or "physical" }}</span>
+<div class="page-header">
+  <div class="flex-grow-1 min-w-0">
+    <h1 class="mb-1">{{ server.hostname }}</h1>
+    <p class="lead mb-2 mono">{{ server.fqdn or "—" }}</p>
+    <div class="d-flex flex-wrap gap-2">
+      {% if server.status %}<span class="badge bg-status-{{ server.status }}">{{ server.status }}</span>{% endif %}
+      {% if server.environment %}<span class="badge bg-env-{{ server.environment }}">{{ server.environment }}</span>{% endif %}
+      <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ server.server_type or "physical" }}</span>
+      {% if server.owner %}<span class="badge bg-light text-dark border"><i class="bi bi-person me-1"></i>{{ server.owner }}</span>{% endif %}
+      {% if server.rack %}<span class="badge bg-light text-dark border"><i class="bi bi-geo-alt me-1"></i>{{ server.rack }}</span>{% endif %}
     </div>
   </div>
-  <div class="corner reveal reveal-3">
-    <b>FILED</b>
-    {{ server.last_updated.strftime("%Y-%m-%d") if server.last_updated else "—" }}
-  </div>
-</header>
-
-{% if request.state.user and request.state.user.is_editor %}
-  <div class="btn-row" style="margin: 1.5rem 0 0;">
-    <a href="/servers/{{ server.pk }}/edit" class="btn primary">Edit record</a>
-    {% if request.state.user.is_admin %}
+  <div class="actions">
+    {% if request.state.user and request.state.user.is_editor %}
+      <a href="/servers/{{ server.pk }}/edit" class="btn btn-primary"><i class="bi bi-pencil me-1"></i>Edit</a>
+    {% endif %}
+    <a href="/api/servers/{{ server.pk }}" target="_blank" rel="noopener" class="btn btn-outline-secondary"><i class="bi bi-braces me-1"></i>JSON</a>
+    {% if request.state.user and request.state.user.is_admin %}
       <form method="post" action="/servers/{{ server.pk }}/delete" class="inline-form"
             onsubmit="return confirm('Delete {{ server.hostname }}?')">
-        <button type="submit" class="btn danger">Decommission</button>
+        <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash me-1"></i>Delete</button>
       </form>
     {% endif %}
-    <a href="/api/servers/{{ server.pk }}" class="btn ghost" target="_blank" rel="noopener">JSON ⇗</a>
   </div>
-{% endif %}
+</div>
 
-<div class="row gap-y" style="margin-top: 2rem;">
+<ul class="nav nav-tabs" role="tablist">
+  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-ops"   type="button">Operations</button></li>
+  <li class="nav-item"><button class="nav-link"        data-bs-toggle="tab" data-bs-target="#tab-hw"    type="button">Hardware</button></li>
+  <li class="nav-item"><button class="nav-link"        data-bs-toggle="tab" data-bs-target="#tab-sys"   type="button">System &amp; network</button></li>
+  <li class="nav-item"><button class="nav-link"        data-bs-toggle="tab" data-bs-target="#tab-notes" type="button">Notes</button></li>
+</ul>
 
-  <!-- OPS -->
-  <section class="col-6">
-    <div class="section-head">
-      <span class="ix">§A</span>
-      <h3>Operations</h3>
-      <span class="rule"></span>
-      <span class="tail">Owner · purpose · service window</span>
+<div class="tab-content">
+
+  <!-- Operations -->
+  <div class="tab-pane fade show active" id="tab-ops" role="tabpanel">
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header">Ownership</div>
+          <div class="card-body">
+            <dl class="kv-list">
+              <dt>Owner</dt>     <dd>{{ server.owner or "" }}</dd>
+              <dt>Purpose</dt>   <dd>{{ server.purpose or "" }}</dd>
+              <dt>Patch window</dt><dd>{{ server.patch_window or "" }}</dd>
+              <dt>Warranty</dt>  <dd>{{ server.warranty_expires.strftime("%Y-%m-%d") if server.warranty_expires else "" }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header">Tags</div>
+          <div class="card-body">
+            <dl class="kv-list">
+              <dt>General</dt>
+              <dd>{% for t in (server.tags or []) %}<span class="badge tag">{{ t }}</span>{% else %}{% endfor %}</dd>
+              <dt>Compliance</dt>
+              <dd>{% for t in (server.compliance_tags or []) %}<span class="badge tag compliance">{{ t }}</span>{% else %}{% endfor %}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
     </div>
-    <dl class="dl">
-      <dt>Owner</dt>     <dd>{{ server.owner or "" }}</dd>
-      <dt>Purpose</dt>   <dd>{{ server.purpose or "" }}</dd>
-      <dt>Patch window</dt><dd>{{ server.patch_window or "" }}</dd>
-      <dt>Warranty</dt>  <dd>{{ server.warranty_expires.strftime("%Y-%m-%d") if server.warranty_expires else "" }}</dd>
-      <dt>Tags</dt>      <dd>{% for t in (server.tags or []) %}<span class="tag">{{ t }}</span>{% else %}{% endfor %}</dd>
-      <dt>Compliance</dt><dd>{% for t in (server.compliance_tags or []) %}<span class="tag compliance">{{ t }}</span>{% else %}{% endfor %}</dd>
-    </dl>
-  </section>
+  </div>
 
-  <!-- HARDWARE -->
-  <section class="col-6">
-    <div class="section-head">
-      <span class="ix">§B</span>
-      <h3>Hardware</h3>
-      <span class="rule"></span>
-      <span class="tail">Vendor · serial · silicon</span>
+  <!-- Hardware -->
+  <div class="tab-pane fade" id="tab-hw" role="tabpanel">
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header">Asset</div>
+          <div class="card-body">
+            <dl class="kv-list">
+              <dt>Vendor</dt>    <dd>{{ server.vendor or "" }}</dd>
+              <dt>Product</dt>   <dd>{{ server.product_name or "" }}</dd>
+              <dt>Serial</dt>    <dd class="mono">{{ server.serial_number or "" }}</dd>
+              <dt>Asset tag</dt> <dd class="mono">{{ server.asset_tag or "" }}</dd>
+              <dt>Hypervisor</dt><dd class="mono">{{ server.hypervisor or "" }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header">Compute &amp; storage</div>
+          <div class="card-body">
+            <dl class="kv-list">
+              <dt>CPU</dt><dd class="mono">{{ server.cpu_model or "" }}{% if server.cpu_cores %} · {{ server.cpu_cores }} cores{% endif %}</dd>
+              <dt>RAM</dt><dd class="mono">{{ (server.ram_bytes / 1073741824) | round(1) if server.ram_bytes else "" }}{% if server.ram_bytes %} GB{% endif %}</dd>
+              <dt>Disk</dt><dd class="mono">{{ (server.disk_bytes / 1073741824) | round(1) if server.disk_bytes else "" }}{% if server.disk_bytes %} GB{% endif %}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
     </div>
-    <dl class="dl">
-      <dt>Vendor</dt>    <dd>{{ server.vendor or "" }}</dd>
-      <dt>Product</dt>   <dd>{{ server.product_name or "" }}</dd>
-      <dt>Serial</dt>    <dd class="mono">{{ server.serial_number or "" }}</dd>
-      <dt>Asset tag</dt> <dd class="mono">{{ server.asset_tag or "" }}</dd>
-      <dt>CPU</dt>       <dd class="mono">{{ server.cpu_model or "" }}{% if server.cpu_cores %} · {{ server.cpu_cores }} cores{% endif %}</dd>
-      <dt>RAM</dt>       <dd class="mono">{{ (server.ram_bytes / 1073741824) | round(1) if server.ram_bytes else "" }}{% if server.ram_bytes %} GB{% endif %}</dd>
-      <dt>Disk</dt>      <dd class="mono">{{ (server.disk_bytes / 1073741824) | round(1) if server.disk_bytes else "" }}{% if server.disk_bytes %} GB{% endif %}</dd>
-    </dl>
-  </section>
+  </div>
 
-  <!-- SYSTEM -->
-  <section class="col-6">
-    <div class="section-head">
-      <span class="ix">§C</span>
-      <h3>System</h3>
-      <span class="rule"></span>
-      <span class="tail">OS · kernel · hypervisor</span>
+  <!-- System & network -->
+  <div class="tab-pane fade" id="tab-sys" role="tabpanel">
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header">System</div>
+          <div class="card-body">
+            <dl class="kv-list">
+              <dt>OS</dt>        <dd class="mono">{{ server.os_name or "" }} {{ server.os_version or "" }}</dd>
+              <dt>Kernel</dt>    <dd class="mono">{{ server.kernel or "" }}</dd>
+              <dt>Last scan</dt> <dd class="mono">{{ server.last_discovered.strftime("%Y-%m-%d %H:%M") if server.last_discovered else "never" }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header">Network &amp; location</div>
+          <div class="card-body">
+            <dl class="kv-list">
+              <dt>IPs</dt>     <dd class="mono">{{ (server.ip_addresses or []) | join(", ") }}</dd>
+              <dt>MACs</dt>    <dd class="mono">{{ (server.mac_addresses or []) | join(", ") }}</dd>
+              <dt>VLAN</dt>    <dd class="mono">{{ server.vlan or "" }}</dd>
+              <dt>Rack</dt>    <dd>{{ server.rack or "" }}</dd>
+              <dt>Location</dt><dd>{{ server.location or "" }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
     </div>
-    <dl class="dl">
-      <dt>OS</dt>        <dd class="mono">{{ server.os_name or "" }} {{ server.os_version or "" }}</dd>
-      <dt>Kernel</dt>    <dd class="mono">{{ server.kernel or "" }}</dd>
-      <dt>Hypervisor</dt><dd class="mono">{{ server.hypervisor or "" }}</dd>
-    </dl>
-  </section>
+  </div>
 
-  <!-- NETWORK -->
-  <section class="col-6">
-    <div class="section-head">
-      <span class="ix">§D</span>
-      <h3>Network &amp; location</h3>
-      <span class="rule"></span>
-      <span class="tail">Addresses · rack</span>
+  <!-- Notes -->
+  <div class="tab-pane fade" id="tab-notes" role="tabpanel">
+    <div class="card">
+      <div class="card-body">
+        <article class="md-body">
+          {% if server.notes %}
+            {{ server.notes | markdown | safe }}
+          {% else %}
+            <p class="text-muted mb-0"><em>No notes filed for this host.</em></p>
+          {% endif %}
+        </article>
+      </div>
     </div>
-    <dl class="dl">
-      <dt>IP&nbsp;v{4,6}</dt><dd class="mono">{{ (server.ip_addresses or []) | join(", ") }}</dd>
-      <dt>MAC</dt>          <dd class="mono">{{ (server.mac_addresses or []) | join(", ") }}</dd>
-      <dt>VLAN</dt>         <dd class="mono">{{ server.vlan or "" }}</dd>
-      <dt>Rack</dt>         <dd>{{ server.rack or "" }}</dd>
-      <dt>Location</dt>     <dd>{{ server.location or "" }}</dd>
-      <dt>Last discovery</dt>
-      <dd class="mono">{{ server.last_discovered.strftime("%Y-%m-%d %H:%M") if server.last_discovered else "never" }}</dd>
-    </dl>
-  </section>
-
-  <!-- NOTES -->
-  <section class="col-12">
-    <div class="section-head">
-      <span class="ix">§E</span>
-      <h3>Notes</h3>
-      <span class="rule"></span>
-      <span class="tail">Markdown · rendered server-side</span>
-    </div>
-    <article class="md">
-      {% if server.notes %}
-        {{ server.notes | markdown | safe }}
-      {% else %}
-        <p class="muted"><em>No notes filed for this host.</em></p>
-      {% endif %}
-    </article>
-  </section>
+  </div>
 </div>
 
 {% endblock %}

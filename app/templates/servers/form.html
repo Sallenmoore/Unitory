@@ -1,120 +1,132 @@
 {% extends "base.html" %}
-{% block title %}{{ "Edit " + server.hostname if server else "Intake" }}{% endblock %}
+{% block title %}{{ "Edit " + server.hostname if server else "New server" }}{% endblock %}
+{% block breadcrumb %}
+  <li class="breadcrumb-item"><a href="/">Overview</a></li>
+  <li class="breadcrumb-item"><a href="/servers">Fleet</a></li>
+  {% if server %}
+    <li class="breadcrumb-item"><a href="/servers/{{ server.pk }}">{{ server.hostname }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Edit</li>
+  {% else %}
+    <li class="breadcrumb-item active" aria-current="page">New server</li>
+  {% endif %}
+{% endblock %}
 {% block content %}
 {% set action = "/servers/" + server.pk|string if server else "/servers" %}
 
-<header class="page-head">
-  <div class="title">
-    <span class="meta reveal">
-      <a class="crumbs bare" href="/servers">FLEET</a>
-      <span>{{ "AMEND" if server else "INTAKE" }} ·
-        {% if server %}<b>#{{ server.pk | string | upper }}</b>{% else %}<b>NEW RECORD</b>{% endif %}
-      </span>
-    </span>
-    <h1 class="reveal reveal-1">{{ "Amend " + server.hostname if server else "File a host" }}</h1>
-    <small class="reveal reveal-2">All fields optional except hostname. Discovered fields will be overwritten on the next scan; human fields are sacred.</small>
+<div class="page-header">
+  <div>
+    <h1>{{ "Edit " + server.hostname if server else "New server" }}</h1>
+    <p class="lead">All fields except hostname are optional. Discovered fields will be overwritten on the next scan; human fields are sacred.</p>
   </div>
-  <div class="corner reveal reveal-3">
-    <b>{{ "REV" if server else "NEW" }}</b>
-    {% if server %}{{ server.last_updated.strftime("%Y-%m-%d %H:%M") if server.last_updated else "—" }}{% else %}—{% endif %}
-  </div>
-</header>
+</div>
 
-<form method="post" action="{{ action }}" style="margin-top: 2rem;">
+<form method="post" action="{{ action }}">
 
-  <fieldset>
-    <legend>Identity</legend>
-    <div class="row">
-      <div class="col-6"><label>Hostname *<input type="text" name="hostname" required value="{{ server.hostname if server else '' }}"></label></div>
-      <div class="col-6"><label>FQDN<input type="text" name="fqdn" value="{{ server.fqdn if server else '' }}"></label></div>
-      <div class="col-4"><label>Type
-        <select name="server_type">
+  <div class="form-section">
+    <h6>Identity</h6>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label" for="f-host">Hostname <span class="text-danger">*</span></label>
+        <input id="f-host" type="text" name="hostname" class="form-control" required value="{{ server.hostname if server else '' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="f-fqdn">FQDN</label>
+        <input id="f-fqdn" type="text" name="fqdn" class="form-control" value="{{ server.fqdn if server else '' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="f-type">Type</label>
+        <select id="f-type" name="server_type" class="form-select">
           {% for t in server_types %}<option value="{{ t }}" {% if server and server.server_type == t %}selected{% endif %}>{{ t }}</option>{% endfor %}
         </select>
-      </label></div>
-      <div class="col-4"><label>Environment
-        <select name="environment">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="f-env">Environment</label>
+        <select id="f-env" name="environment" class="form-select">
           {% for e in environments %}<option value="{{ e }}" {% if server and server.environment == e %}selected{% endif %}>{{ e }}</option>{% endfor %}
         </select>
-      </label></div>
-      <div class="col-4"><label>Status
-        <select name="status">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="f-status">Status</label>
+        <select id="f-status" name="status" class="form-select">
           {% for st in statuses %}<option value="{{ st }}" {% if server and server.status == st %}selected{% endif %}>{{ st }}</option>{% endfor %}
         </select>
-      </label></div>
+      </div>
     </div>
-  </fieldset>
+  </div>
 
-  <fieldset>
-    <legend>Operations</legend>
-    <div class="row">
-      <div class="col-4"><label>Owner<input type="text" name="owner" value="{{ server.owner if server else '' }}"></label></div>
-      <div class="col-4"><label>Purpose<input type="text" name="purpose" value="{{ server.purpose if server else '' }}"></label></div>
-      <div class="col-4"><label>Patch window<input type="text" name="patch_window" value="{{ server.patch_window if server else '' }}"></label></div>
-      <div class="col-6"><label>Tags (comma-separated)<input type="text" name="tags" value="{{ (server.tags or []) | join(', ') if server else '' }}"></label></div>
-      <div class="col-6"><label>Compliance tags<input type="text" name="compliance_tags" value="{{ (server.compliance_tags or []) | join(', ') if server else '' }}"></label></div>
+  <div class="form-section">
+    <h6>Operations</h6>
+    <div class="row g-3">
+      <div class="col-md-4"><label class="form-label">Owner<input type="text" name="owner" class="form-control" value="{{ server.owner if server else '' }}"></label></div>
+      <div class="col-md-4"><label class="form-label">Purpose<input type="text" name="purpose" class="form-control" value="{{ server.purpose if server else '' }}"></label></div>
+      <div class="col-md-4"><label class="form-label">Patch window<input type="text" name="patch_window" class="form-control" value="{{ server.patch_window if server else '' }}"></label></div>
+      <div class="col-md-6"><label class="form-label">Tags <span class="text-muted">(comma-separated)</span><input type="text" name="tags" class="form-control" value="{{ (server.tags or []) | join(', ') if server else '' }}"></label></div>
+      <div class="col-md-6"><label class="form-label">Compliance tags<input type="text" name="compliance_tags" class="form-control" value="{{ (server.compliance_tags or []) | join(', ') if server else '' }}"></label></div>
     </div>
-  </fieldset>
+  </div>
 
-  <fieldset>
-    <legend>Hardware</legend>
-    <div class="row">
-      <div class="col-6"><label>Vendor<input type="text" name="vendor" value="{{ server.vendor if server else '' }}"></label></div>
-      <div class="col-6"><label>Product<input type="text" name="product_name" value="{{ server.product_name if server else '' }}"></label></div>
-      <div class="col-4"><label>Serial #<input type="text" name="serial_number" value="{{ server.serial_number if server else '' }}"></label></div>
-      <div class="col-4"><label>Asset tag<input type="text" name="asset_tag" value="{{ server.asset_tag if server else '' }}"></label></div>
-      <div class="col-4"><label>Hypervisor<input type="text" name="hypervisor" value="{{ server.hypervisor if server else '' }}"></label></div>
-      <div class="col-4"><label>CPU model<input type="text" name="cpu_model" value="{{ server.cpu_model if server else '' }}"></label></div>
-      <div class="col-3"><label>CPU cores<input type="number" name="cpu_cores" value="{{ server.cpu_cores if server else '' }}"></label></div>
-      <div class="col-3"><label>RAM (bytes)<input type="number" name="ram_bytes" value="{{ server.ram_bytes if server else '' }}"></label></div>
-      <div class="col-3"><label>Disk (bytes)<input type="number" name="disk_bytes" value="{{ server.disk_bytes if server else '' }}"></label></div>
+  <div class="form-section">
+    <h6>Hardware</h6>
+    <div class="row g-3">
+      <div class="col-md-6"><label class="form-label">Vendor<input type="text" name="vendor" class="form-control" value="{{ server.vendor if server else '' }}"></label></div>
+      <div class="col-md-6"><label class="form-label">Product<input type="text" name="product_name" class="form-control" value="{{ server.product_name if server else '' }}"></label></div>
+      <div class="col-md-4"><label class="form-label">Serial #<input type="text" name="serial_number" class="form-control" value="{{ server.serial_number if server else '' }}"></label></div>
+      <div class="col-md-4"><label class="form-label">Asset tag<input type="text" name="asset_tag" class="form-control" value="{{ server.asset_tag if server else '' }}"></label></div>
+      <div class="col-md-4"><label class="form-label">Hypervisor<input type="text" name="hypervisor" class="form-control" value="{{ server.hypervisor if server else '' }}"></label></div>
+      <div class="col-md-6"><label class="form-label">CPU model<input type="text" name="cpu_model" class="form-control" value="{{ server.cpu_model if server else '' }}"></label></div>
+      <div class="col-md-2"><label class="form-label">CPU cores<input type="number" name="cpu_cores" class="form-control" value="{{ server.cpu_cores if server else '' }}"></label></div>
+      <div class="col-md-2"><label class="form-label">RAM <span class="text-muted">(bytes)</span><input type="number" name="ram_bytes" class="form-control" value="{{ server.ram_bytes if server else '' }}"></label></div>
+      <div class="col-md-2"><label class="form-label">Disk <span class="text-muted">(bytes)</span><input type="number" name="disk_bytes" class="form-control" value="{{ server.disk_bytes if server else '' }}"></label></div>
     </div>
-  </fieldset>
+  </div>
 
-  <fieldset>
-    <legend>System</legend>
-    <div class="row">
-      <div class="col-4"><label>OS name<input type="text" name="os_name" value="{{ server.os_name if server else '' }}"></label></div>
-      <div class="col-4"><label>OS version<input type="text" name="os_version" value="{{ server.os_version if server else '' }}"></label></div>
-      <div class="col-4"><label>Kernel<input type="text" name="kernel" value="{{ server.kernel if server else '' }}"></label></div>
+  <div class="form-section">
+    <h6>System</h6>
+    <div class="row g-3">
+      <div class="col-md-4"><label class="form-label">OS name<input type="text" name="os_name" class="form-control" value="{{ server.os_name if server else '' }}"></label></div>
+      <div class="col-md-4"><label class="form-label">OS version<input type="text" name="os_version" class="form-control" value="{{ server.os_version if server else '' }}"></label></div>
+      <div class="col-md-4"><label class="form-label">Kernel<input type="text" name="kernel" class="form-control" value="{{ server.kernel if server else '' }}"></label></div>
     </div>
-  </fieldset>
+  </div>
 
-  <fieldset>
-    <legend>Network &amp; location</legend>
-    <div class="row">
-      <div class="col-6"><label>IPs (comma-separated)<input type="text" name="ip_addresses" value="{{ (server.ip_addresses or []) | join(', ') if server else '' }}"></label></div>
-      <div class="col-6"><label>MACs (comma-separated)<input type="text" name="mac_addresses" value="{{ (server.mac_addresses or []) | join(', ') if server else '' }}"></label></div>
-      <div class="col-4"><label>VLAN<input type="text" name="vlan" value="{{ server.vlan if server else '' }}"></label></div>
-      <div class="col-4"><label>Rack<input type="text" name="rack" value="{{ server.rack if server else '' }}"></label></div>
-      <div class="col-4"><label>Location<input type="text" name="location" value="{{ server.location if server else '' }}"></label></div>
+  <div class="form-section">
+    <h6>Network &amp; location</h6>
+    <div class="row g-3">
+      <div class="col-md-6"><label class="form-label">IPs <span class="text-muted">(comma-separated)</span><input type="text" name="ip_addresses" class="form-control" value="{{ (server.ip_addresses or []) | join(', ') if server else '' }}"></label></div>
+      <div class="col-md-6"><label class="form-label">MACs <span class="text-muted">(comma-separated)</span><input type="text" name="mac_addresses" class="form-control" value="{{ (server.mac_addresses or []) | join(', ') if server else '' }}"></label></div>
+      <div class="col-md-4"><label class="form-label">VLAN<input type="text" name="vlan" class="form-control" value="{{ server.vlan if server else '' }}"></label></div>
+      <div class="col-md-4"><label class="form-label">Rack<input type="text" name="rack" class="form-control" value="{{ server.rack if server else '' }}"></label></div>
+      <div class="col-md-4"><label class="form-label">Location<input type="text" name="location" class="form-control" value="{{ server.location if server else '' }}"></label></div>
     </div>
-  </fieldset>
+  </div>
 
-  <fieldset>
-    <legend>Notes (markdown)</legend>
-    <div class="row">
-      <div class="col-6">
-        <label style="margin-bottom: 0.4rem;">Source</label>
-        <textarea name="notes" rows="14"
+  <div class="form-section">
+    <h6>Notes <span class="text-muted fw-normal text-lowercase ms-1">(markdown)</span></h6>
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <label class="form-label">Source</label>
+        <textarea name="notes" rows="14" class="form-control mono"
                   hx-post="/servers/preview-notes"
                   hx-trigger="keyup changed delay:400ms"
                   hx-target="#notes-preview"
                   hx-include="this">{{ server.notes if server else '' }}</textarea>
       </div>
-      <div class="col-6">
-        <div class="preview">
-          <article id="notes-preview" class="md" style="border:0; background: transparent; padding: 0;">
-            {{ server.notes | markdown | safe if server and server.notes else '' }}
-          </article>
+      <div class="col-lg-6">
+        <label class="form-label">Preview</label>
+        <div class="card">
+          <div class="card-body">
+            <article id="notes-preview" class="md-body">
+              {{ server.notes | markdown | safe if server and server.notes else '<p class="text-muted">Type notes on the left to see them rendered here.</p>' | safe }}
+            </article>
+          </div>
         </div>
       </div>
     </div>
-  </fieldset>
+  </div>
 
-  <div class="btn-row" style="margin-top: 1.5rem;">
-    <button type="submit" class="btn primary">Save record</button>
-    <a href="{{ '/servers/' + server.pk|string if server else '/servers' }}" class="btn ghost">Cancel</a>
+  <div class="sticky-actions">
+    <a href="{{ '/servers/' + server.pk|string if server else '/servers' }}" class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save</button>
   </div>
 </form>
 

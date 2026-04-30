@@ -1,18 +1,18 @@
 {# Row cells — rendered both on initial page load and on HTMX polls.
    The parent <tr> carries the hx- attributes so that in-progress jobs
    refresh themselves. #}
-<td class="mono-cell">{{ j.started_at.strftime("%Y-%m-%d %H:%M") if j.started_at else (j.last_updated.strftime("%Y-%m-%d %H:%M") if j.last_updated else "—") }}</td>
+<td class="mono text-muted">{{ j.started_at.strftime("%Y-%m-%d %H:%M") if j.started_at else (j.last_updated.strftime("%Y-%m-%d %H:%M") if j.last_updated else "—") }}</td>
 <td>{{ j.requested_by or "—" }}</td>
-<td class="right mono-cell">{{ (j.hostnames or []) | length }}</td>
-<td><span class="pill state-{{ j.state }}">{{ j.state }}</span></td>
-<td class="mono-cell">{{ j.summary() }}</td>
+<td class="text-end mono">{{ (j.hostnames or []) | length }}</td>
+<td><span class="badge bg-state-{{ j.state }}">{{ j.state }}</span></td>
+<td class="mono small">{{ j.summary() }}</td>
 <td>
   {% if j.errors %}
     <details>
-      <summary><span class="lbl" style="color: var(--rust);">{{ j.errors|length }} error(s)</span></summary>
-      <ul class="no-bullet" style="margin-top: 0.4rem; font-size: 0.85rem;">
+      <summary class="text-danger small">{{ j.errors|length }} error(s)</summary>
+      <ul class="list-unstyled mt-2 small mb-0">
         {% for e in j.errors %}<li><code>{{ e.hostname }}</code> · {{ e.error }}</li>{% endfor %}
       </ul>
     </details>
-  {% else %}—{% endif %}
+  {% else %}<span class="text-muted">—</span>{% endif %}
 </td>

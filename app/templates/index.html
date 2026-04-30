@@ -1,77 +1,95 @@
 {% extends "base.html" %}
-{% block title %}Manifest{% endblock %}
+{% block title %}Overview{% endblock %}
+{% block breadcrumb %}
+  <li class="breadcrumb-item active" aria-current="page">Overview</li>
+{% endblock %}
 {% block content %}
 
-<header class="page-head">
-  <div class="title">
-    <span class="meta reveal">
-      <span class="crumbs">REGISTER</span>
-      <span>Section <b>§01</b> · Manifest</span>
-    </span>
-    <h1 class="reveal reveal-1">Server inventory</h1>
-    <small class="reveal reveal-2">Authoritative ledger for the BU&nbsp;Linux fleet — every host on record, every change stamped.</small>
+<div class="page-header">
+  <div>
+    <h1>Server inventory</h1>
+    <p class="lead">Authoritative ledger for the BU Linux fleet — every host on record, every change stamped.</p>
   </div>
-  <div class="corner reveal reveal-3">
-    <b>{{ recent | length }} ON&nbsp;FILE</b>
-    Recent · 12 shown
+  <div class="actions">
+    {% if request.state.user and request.state.user.is_editor %}
+      <a href="/servers/new" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> New server</a>
+    {% endif %}
+    <a href="/servers" class="btn btn-outline-secondary"><i class="bi bi-hdd-stack me-1"></i> View all</a>
   </div>
-</header>
+</div>
 
-<div class="row gap-y" style="margin-top: 2rem;">
-  <section class="col-12 reveal reveal-1">
-    <div class="search-bar">
-      <input type="search"
-             name="q"
-             placeholder="Locate a host on the register…"
-             hx-get="/servers/search"
-             hx-trigger="keyup changed delay:200ms, search"
-             hx-target="#search-results"
-             hx-swap="innerHTML"
-             autocomplete="off"
-             autofocus>
+<div class="row g-3 mb-4">
+  <div class="col-md-3 col-6">
+    <div class="stat-card">
+      <div class="label">Recent activity</div>
+      <div class="value">{{ recent | length }}</div>
+      <div class="delta">Hosts touched in the recent window</div>
     </div>
-    <ul id="search-results" class="search-results"></ul>
-  </section>
-
-  <section class="col-12">
-    <div class="section-head">
-      <span class="ix">§02</span>
-      <h3>Recently updated</h3>
-      <span class="rule"></span>
-      <span class="tail">Last touched, descending</span>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="stat-card">
+      <div class="label">Production</div>
+      <div class="value">{{ recent | selectattr('environment', 'equalto', 'prod') | list | length }}</div>
+      <div class="delta">Of the recent set</div>
     </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="stat-card">
+      <div class="label">Active</div>
+      <div class="value">{{ recent | selectattr('status', 'equalto', 'active') | list | length }}</div>
+      <div class="delta">Of the recent set</div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="stat-card">
+      <div class="label">Maintenance</div>
+      <div class="value">{{ recent | selectattr('status', 'equalto', 'maintenance') | list | length }}</div>
+      <div class="delta">Of the recent set</div>
+    </div>
+  </div>
+</div>
 
-    {% if recent %}
-      <table class="t ledger">
+<div class="card table-card">
+  <div class="card-header d-flex align-items-center">
+    <span><i class="bi bi-clock-history me-2 text-muted"></i>Recently updated</span>
+    <a href="/servers" class="ms-auto small">All hosts <i class="bi bi-arrow-right"></i></a>
+  </div>
+  {% if recent %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
         <thead>
           <tr>
-            <th style="width: 28%;">Hostname</th>
+            <th>Hostname</th>
             <th>Env</th>
             <th>Status</th>
             <th>OS</th>
-            <th class="right">Updated</th>
+            <th class="text-end">Updated</th>
           </tr>
         </thead>
         <tbody>
           {% for s in recent %}
             <tr>
-              <td><a href="/servers/{{ s.pk }}" class="mono-cell">{{ s.hostname }}</a></td>
-              <td>{% if s.environment %}<span class="pill env-{{ s.environment }}">{{ s.environment }}</span>{% endif %}</td>
-              <td>{% if s.status %}<span class="pill status-{{ s.status }}">{{ s.status }}</span>{% endif %}</td>
-              <td class="mono-cell">{{ s.os_name or "—" }} {{ s.os_version or "" }}</td>
-              <td class="right mono-cell">{{ s.last_updated.strftime("%Y-%m-%d %H:%M") if s.last_updated else "—" }}</td>
+              <td><a href="/servers/{{ s.pk }}" class="mono fw-medium">{{ s.hostname }}</a></td>
+              <td>{% if s.environment %}<span class="badge bg-env-{{ s.environment }}">{{ s.environment }}</span>{% endif %}</td>
+              <td>{% if s.status %}<span class="badge bg-status-{{ s.status }}">{{ s.status }}</span>{% endif %}</td>
+              <td class="mono text-muted">{{ s.os_name or "" }} {{ s.os_version or "" }}</td>
+              <td class="text-end mono text-muted">{{ s.last_updated.strftime("%Y-%m-%d %H:%M") if s.last_updated else "—" }}</td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
-    {% else %}
-      <div class="empty">
-        No servers on the register yet ·
-        <a href="/servers/new">file a host</a> ·
-        or run autodiscovery from <a href="/admin">Ops</a>
+    </div>
+  {% else %}
+    <div class="card-body">
+      <div class="empty-state border-0 mb-0">
+        <i class="bi bi-inboxes"></i>
+        <p class="mb-2">No servers on file yet.</p>
+        <a href="/servers/new" class="btn btn-sm btn-primary">Add the first one</a>
+        <span class="text-muted"> · or run </span>
+        <a href="/admin/discovery">autodiscovery</a>
       </div>
-    {% endif %}
-  </section>
+    </div>
+  {% endif %}
 </div>
 
 {% endblock %}

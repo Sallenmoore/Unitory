@@ -3,71 +3,115 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <title>{% block title %}Manifest{% endblock %} · UNITORY</title>
+  <title>{% block title %}Unitory{% endblock %} · Unitory</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;800;900&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,700&family=JetBrains+Mono:wght@400;500;700&display=swap">
-
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+        crossorigin="anonymous">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="/static/css/app.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+          crossorigin="anonymous" defer></script>
   <script src="https://unpkg.com/htmx.org@1.9.12"
           integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
           crossorigin="anonymous" defer></script>
   <script src="/static/js/app.js" defer></script>
 </head>
 <body>
-  <div class="bar-top">
-    <div class="frame">
-      <div class="ticks">
-        <span class="tick">UNITORY · BU LINUX TEAM</span>
-        <span class="tick">REGISTER OPEN</span>
-      </div>
-      <div class="ticks">
-        <span class="tick" id="batch-id">BATCH-000000</span>
-        <span class="tick" id="clock">00:00:00 UTC</span>
-      </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-brand">
+      <a class="brand-link" href="/">
+        <span class="brand-icon"><i class="bi bi-hdd-stack-fill"></i></span>
+        Unitory
+      </a>
+      <small>BU Linux Team</small>
     </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-title">Inventory</span>
+        <a class="nav-link" href="/"><i class="bi bi-speedometer2"></i> Overview</a>
+        <a class="nav-link" href="/servers"><i class="bi bi-hdd-stack"></i> Fleet</a>
+        {% if request.state.user and request.state.user.is_editor %}
+          <a class="nav-link" href="/servers/new"><i class="bi bi-plus-circle"></i> New server</a>
+        {% endif %}
+      </div>
+
+      {% if request.state.user and request.state.user.is_admin %}
+        <div class="nav-section">
+          <span class="nav-section-title">Operations</span>
+          <a class="nav-link" href="/admin"><i class="bi bi-sliders"></i> Console</a>
+          <a class="nav-link" href="/admin/users"><i class="bi bi-people"></i> Users</a>
+          <a class="nav-link" href="/admin/discovery"><i class="bi bi-broadcast"></i> Discovery</a>
+        </div>
+      {% endif %}
+    </nav>
+
+    {% if request.state.user %}
+      <div class="sidebar-foot">
+        <div class="dropdown dropup">
+          <button type="button" class="user-pill" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="avatar">{{ request.state.user.email[:1] | upper }}</span>
+            <span class="info">
+              <span class="user-email d-block">{{ request.state.user.email }}</span>
+              <span class="badge bg-role-{{ request.state.user.role }}">{{ request.state.user.role }}</span>
+            </span>
+            <i class="bi bi-three-dots-vertical ms-auto"></i>
+          </button>
+          <ul class="dropdown-menu w-100">
+            <li><a class="dropdown-item" href="/auth/logout"><i class="bi bi-box-arrow-right me-2"></i>Sign out</a></li>
+          </ul>
+        </div>
+      </div>
+    {% else %}
+      <div class="sidebar-foot">
+        <a href="/auth/login" class="btn btn-primary w-100">Sign in</a>
+      </div>
+    {% endif %}
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="d-lg-none" id="sidebarToggle" aria-label="Toggle navigation">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <nav aria-label="breadcrumb" class="flex-grow-1 d-none d-md-block">
+        <ol class="breadcrumb">
+          {% block breadcrumb %}
+            <li class="breadcrumb-item active" aria-current="page">{{ self.title() }}</li>
+          {% endblock %}
+        </ol>
+      </nav>
+
+      {% if request.state.user %}
+        <form class="topbar-search" onsubmit="return false;">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="search"
+                   name="q"
+                   class="form-control"
+                   placeholder="Search hosts…"
+                   autocomplete="off"
+                   hx-get="/servers/search"
+                   hx-trigger="keyup changed delay:200ms, search"
+                   hx-target="#search-results"
+                   hx-swap="innerHTML">
+          </div>
+          <ul id="search-results" class="search-results"></ul>
+        </form>
+      {% endif %}
+    </header>
+
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
   </div>
 
-  <nav class="bar-nav">
-    <div class="frame">
-      <a class="brand" href="/">Unitory<span class="reg"></span></a>
-      <ul class="nav">
-        <li><a href="/" {% if request.url.path == "/" %}aria-current="page"{% endif %}>Manifest</a></li>
-        <li><a href="/servers" {% if request.url.path.startswith("/servers") %}aria-current="page"{% endif %}>Fleet</a></li>
-        {% if request.state.user and request.state.user.is_editor %}
-          <li><a href="/servers/new">Intake</a></li>
-        {% endif %}
-        {% if request.state.user and request.state.user.is_admin %}
-          <li><a href="/admin" {% if request.url.path.startswith("/admin") %}aria-current="page"{% endif %}>Ops</a></li>
-        {% endif %}
-      </ul>
-      <div class="nav-right">
-        {% if request.state.user %}
-          <span class="who">
-            <strong>{{ request.state.user.email }}</strong>
-            <span class="pill role-{{ request.state.user.role }}">{{ request.state.user.role }}</span>
-          </span>
-          <ul class="nav"><li><a href="/auth/logout">Sign out</a></li></ul>
-        {% else %}
-          <ul class="nav"><li><a href="/auth/login">Sign in</a></li></ul>
-        {% endif %}
-      </div>
-    </div>
-  </nav>
-
-  <main class="frame">
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer class="bar-foot">
-    <div class="frame">
-      <span class="seal">UNITORY · MANIFEST CONTROL</span>
-      <span>BINGHAMTON UNIVERSITY · LINUX TEAM</span>
-      <span><a class="bare" href="/healthz">SYS · /HEALTHZ</a></span>
-    </div>
-  </footer>
 </body>
 </html>

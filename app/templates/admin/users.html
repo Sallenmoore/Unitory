@@ -1,67 +1,66 @@
 {% extends "base.html" %}
-{% block title %}Roster{% endblock %}
+{% block title %}Users{% endblock %}
+{% block breadcrumb %}
+  <li class="breadcrumb-item"><a href="/">Overview</a></li>
+  <li class="breadcrumb-item"><a href="/admin">Operations</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Users</li>
+{% endblock %}
 {% block content %}
 
-<header class="page-head">
-  <div class="title">
-    <span class="meta reveal">
-      <a class="crumbs bare" href="/admin">OPERATIONS</a>
-      <span>Section <b>§99·A</b> · Roster</span>
-    </span>
-    <h1 class="reveal reveal-1">User roster</h1>
-    <small class="reveal reveal-2">Three roles. The first user to ever sign in becomes <span class="pill role-admin">admin</span> automatically; everyone after lands as <span class="pill role-viewer">viewer</span>.</small>
+<div class="page-header">
+  <div>
+    <h1>Users</h1>
+    <p class="lead">Three roles. The first user to ever sign in becomes <span class="badge bg-role-admin">admin</span>; subsequent users land as <span class="badge bg-role-viewer">viewer</span> until promoted.</p>
   </div>
-  <div class="corner reveal reveal-3">
-    <b>{{ users | length }} ACCOUNT{% if users | length != 1 %}S{% endif %}</b>
-    Roster head-count
+  <div class="actions">
+    <span class="badge bg-light text-dark border">{{ users | length }} account{% if users | length != 1 %}s{% endif %}</span>
   </div>
-</header>
-
-<div class="section-head" style="margin-top: 2rem;">
-  <span class="ix">§99·A·1</span>
-  <h3>Accounts</h3>
-  <span class="rule"></span>
-  <span class="tail">Inline role · sign-in · removal</span>
 </div>
 
-<table class="t ledger">
-  <thead>
-    <tr>
-      <th>Email</th>
-      <th>Name</th>
-      <th>Role</th>
-      <th>Last sign-in</th>
-      <th class="right">Action</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for u in users %}
-      <tr>
-        <td class="mono-cell">{{ u.email }}</td>
-        <td>{{ u.name or "—" }}</td>
-        <td>
-          <form method="post" action="/admin/users/{{ u.pk }}/role" class="inline-form">
-            <select name="role" onchange="this.form.submit()" aria-label="Role for {{ u.email }}">
-              {% for r in roles %}
-                <option value="{{ r }}" {% if r == u.role %}selected{% endif %}>{{ r }}</option>
-              {% endfor %}
-            </select>
-          </form>
-        </td>
-        <td class="mono-cell">{{ u.last_login.strftime("%Y-%m-%d %H:%M") if u.last_login else "—" }}</td>
-        <td class="right">
-          {% if u.pk|string != user.pk|string %}
-            <form method="post" action="/admin/users/{{ u.pk }}/delete" class="inline-form"
-                  onsubmit="return confirm('Delete {{ u.email }}?')">
-              <button type="submit" class="btn danger tiny">Retire</button>
-            </form>
-          {% else %}
-            <span class="lbl">— SELF —</span>
-          {% endif %}
-        </td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Name</th>
+          <th>Role</th>
+          <th>Last sign-in</th>
+          <th class="text-end" style="width: 1%;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td class="mono">{{ u.email }}</td>
+            <td>{{ u.name or "—" }}</td>
+            <td>
+              <form method="post" action="/admin/users/{{ u.pk }}/role" class="inline-form">
+                <select name="role" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Role for {{ u.email }}">
+                  {% for r in roles %}
+                    <option value="{{ r }}" {% if r == u.role %}selected{% endif %}>{{ r }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </td>
+            <td class="mono text-muted">{{ u.last_login.strftime("%Y-%m-%d %H:%M") if u.last_login else "—" }}</td>
+            <td class="text-end">
+              {% if u.pk|string != user.pk|string %}
+                <form method="post" action="/admin/users/{{ u.pk }}/delete" class="inline-form"
+                      onsubmit="return confirm('Delete {{ u.email }}?')">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete user">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              {% else %}
+                <span class="text-muted small">(you)</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 
 {% endblock %}

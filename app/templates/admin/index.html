@@ -1,38 +1,52 @@
 {% extends "base.html" %}
 {% block title %}Operations{% endblock %}
+{% block breadcrumb %}
+  <li class="breadcrumb-item"><a href="/">Overview</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Operations</li>
+{% endblock %}
 {% block content %}
 
-<header class="page-head">
-  <div class="title">
-    <span class="meta reveal">
-      <span class="crumbs">CONTROL</span>
-      <span>Section <b>§99</b> · Operations</span>
-    </span>
-    <h1 class="reveal reveal-1">Operations console</h1>
-    <small class="reveal reveal-2">Privileged commands. Roster of users; autodiscovery dispatch.</small>
+<div class="page-header">
+  <div>
+    <h1>Operations console</h1>
+    <p class="lead">Privileged commands. Roster of users; autodiscovery dispatch.</p>
   </div>
-  <div class="corner reveal reveal-3">
-    <b>RESTRICTED</b>
-    Admin only
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <a href="/admin/users" class="card text-decoration-none h-100" style="color: inherit;">
+      <div class="card-body d-flex align-items-start gap-3">
+        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px;font-size:1.3rem;">
+          <i class="bi bi-people"></i>
+        </div>
+        <div class="flex-grow-1">
+          <h5 class="mb-1">Users &amp; roles</h5>
+          <p class="text-muted mb-2">Promote, demote, retire user accounts. Three roles:
+            <span class="badge bg-role-viewer">viewer</span>
+            <span class="badge bg-role-editor">editor</span>
+            <span class="badge bg-role-admin">admin</span>.
+          </p>
+          <span class="text-primary small">Manage <i class="bi bi-arrow-right"></i></span>
+        </div>
+      </div>
+    </a>
   </div>
-</header>
 
-<div class="row gap-y" style="margin-top: 2rem;">
-  <a href="/admin/users" class="col-6 card feature bare" style="border-bottom: 0;">
-    <span class="corner-no">§99·A</span>
-    <span class="lbl">Roster</span>
-    <h3 style="margin-top: 0.5rem;">Users &amp; roles</h3>
-    <p>Promote, demote, retire user accounts. Three roles: <span class="pill role-viewer">viewer</span> <span class="pill role-editor">editor</span> <span class="pill role-admin">admin</span>.</p>
-    <span class="lbl" style="color: var(--hot); margin-top: 1rem;">→ Manage</span>
-  </a>
-
-  <a href="/admin/discovery" class="col-6 card feature bare" style="border-bottom: 0;">
-    <span class="corner-no">§99·B</span>
-    <span class="lbl">Dispatch</span>
-    <h3 style="margin-top: 0.5rem;">Autodiscovery</h3>
-    <p>Scrape <code>node_exporter</code> on a list of hostnames. Upserts hardware, network, OS, DMI fields. Human notes are never touched.</p>
-    <span class="lbl" style="color: var(--hot); margin-top: 1rem;">→ Run</span>
-  </a>
+  <div class="col-md-6">
+    <a href="/admin/discovery" class="card text-decoration-none h-100" style="color: inherit;">
+      <div class="card-body d-flex align-items-start gap-3">
+        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px;font-size:1.3rem;">
+          <i class="bi bi-broadcast"></i>
+        </div>
+        <div class="flex-grow-1">
+          <h5 class="mb-1">Autodiscovery</h5>
+          <p class="text-muted mb-2">Scrape <code>node_exporter</code> on a list of hostnames. Upserts hardware, network, OS, DMI fields. Human notes are never touched.</p>
+          <span class="text-primary small">Run <i class="bi bi-arrow-right"></i></span>
+        </div>
+      </div>
+    </a>
+  </div>
 </div>
 
 {% endblock %}

@@ -1,32 +1,33 @@
-// Unitory · top-bar clock + tiny enhancements.
+// Unitory · sidebar toggle + active nav link.
 (function () {
-  function pad(n) { return String(n).padStart(2, "0"); }
-
-  function tick() {
-    const el = document.getElementById("clock");
-    if (!el) return;
-    const d = new Date();
-    const hh = pad(d.getUTCHours());
-    const mm = pad(d.getUTCMinutes());
-    const ss = pad(d.getUTCSeconds());
-    el.textContent = `${hh}:${mm}:${ss} UTC`;
+  function initSidebarToggle() {
+    const btn = document.getElementById("sidebarToggle");
+    const sidebar = document.getElementById("sidebar");
+    if (!btn || !sidebar) return;
+    btn.addEventListener("click", () => {
+      sidebar.classList.toggle("is-open");
+      document.body.classList.toggle("has-sidebar-open", sidebar.classList.contains("is-open"));
+    });
+    document.body.addEventListener("click", (e) => {
+      if (!sidebar.classList.contains("is-open")) return;
+      if (sidebar.contains(e.target) || btn.contains(e.target)) return;
+      sidebar.classList.remove("is-open");
+      document.body.classList.remove("has-sidebar-open");
+    });
   }
 
-  function stamp() {
-    // Stable session-batch id so the page header shows something
-    // manifest-y. Not security-relevant; cosmetic.
-    const el = document.getElementById("batch-id");
-    if (!el) return;
-    const seed = Math.floor(Math.random() * 0xffffff)
-      .toString(16)
-      .toUpperCase()
-      .padStart(6, "0");
-    el.textContent = `BATCH-${seed}`;
+  function highlightActiveNav() {
+    const path = window.location.pathname;
+    document.querySelectorAll(".sidebar-nav .nav-link").forEach((link) => {
+      const href = link.getAttribute("href");
+      if (!href) return;
+      const active = href === "/" ? path === "/" : path.startsWith(href);
+      link.classList.toggle("active", active);
+    });
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    tick();
-    stamp();
-    setInterval(tick, 1000);
+    initSidebarToggle();
+    highlightActiveNav();
   });
 })();

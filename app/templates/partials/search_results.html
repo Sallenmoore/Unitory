@@ -2,11 +2,13 @@
   {% for s in servers %}
     <li>
       <a href="/servers/{{ s.pk }}">
-        <strong>{{ s.hostname }}</strong>
+        <strong class="mono">{{ s.hostname }}</strong>
         <span class="meta">{{ s.environment or "—" }} · {{ s.status or "—" }} · {{ s.os_name or "—" }}</span>
       </a>
     </li>
   {% endfor %}
 {% elif q %}
-  <li><div class="empty" style="border: 0; padding: 1rem;">No hosts match &ldquo;{{ q }}&rdquo;.</div></li>
+  <li>
+    <div class="px-3 py-3 text-muted small">No hosts match &ldquo;{{ q }}&rdquo;.</div>
+  </li>
 {% endif %}
