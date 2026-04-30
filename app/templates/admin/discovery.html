@@ -1,29 +1,56 @@
 {% extends "base.html" %}
 {% block title %}Autodiscovery{% endblock %}
 {% block content %}
-<h1>Autodiscovery</h1>
-<p><a href="/admin">&larr; Admin home</a></p>
 
-<form method="post" action="/admin/discovery/scan" class="grid-x grid-padding-x">
-  <div class="cell medium-9">
-    <label>Hostnames (one per line)
-      <textarea name="hostnames" rows="8" placeholder="host1.binghamton.edu
-host2.binghamton.edu"></textarea>
+<header class="page-head">
+  <div class="title">
+    <span class="meta reveal">
+      <a class="crumbs bare" href="/admin">OPERATIONS</a>
+      <span>Section <b>§99·B</b> · Dispatch</span>
+    </span>
+    <h1 class="reveal reveal-1">Autodiscovery dispatch</h1>
+    <small class="reveal reveal-2">Hand a list of hostnames over the wire; we’ll scrape <code>node_exporter</code> on the named port and stamp every host into the register.</small>
+  </div>
+  <div class="corner reveal reveal-3">
+    <b>{{ jobs | length }} ON FILE</b>
+    Recent jobs
+  </div>
+</header>
+
+<form method="post" action="/admin/discovery/scan" class="row" style="margin: 2rem 0 1.5rem;">
+  <div class="col-9">
+    <label>
+      <span class="lbl">Hostnames · one per line</span>
+      <textarea name="hostnames" rows="9" placeholder="host1.binghamton.edu&#10;host2.binghamton.edu&#10;…"></textarea>
     </label>
   </div>
-  <div class="cell medium-3">
-    <label>Port
+  <div class="col-3">
+    <label>
+      <span class="lbl">Port</span>
       <input type="number" name="port" value="{{ default_port }}" min="1" max="65535">
     </label>
-    <button type="submit" class="button success">Scan</button>
+    <button type="submit" class="btn primary" style="margin-top: 1rem; width: 100%; justify-content: center;">Dispatch scan</button>
   </div>
 </form>
 
-<h3>Recent jobs</h3>
+<div class="section-head">
+  <span class="ix">§99·B·LOG</span>
+  <h3>Recent jobs</h3>
+  <span class="rule"></span>
+  <span class="tail">Polls every 2s while running</span>
+</div>
+
 {% if jobs %}
-  <table class="hover">
+  <table class="t ledger">
     <thead>
-      <tr><th>Started</th><th>Requested by</th><th>Hosts</th><th>State</th><th>Results</th><th>Errors</th></tr>
+      <tr>
+        <th>Started</th>
+        <th>Requested by</th>
+        <th class="right">Hosts</th>
+        <th>State</th>
+        <th>Results</th>
+        <th>Errors</th>
+      </tr>
     </thead>
     <tbody>
       {% for j in jobs %}
@@ -39,6 +66,7 @@ host2.binghamton.edu"></textarea>
     </tbody>
   </table>
 {% else %}
-  <p class="muted">No discovery jobs yet.</p>
+  <div class="empty">No discovery jobs filed yet.</div>
 {% endif %}
+
 {% endblock %}

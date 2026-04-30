@@ -1,25 +1,38 @@
 {% extends "base.html" %}
-{% block title %}Admin{% endblock %}
+{% block title %}Operations{% endblock %}
 {% block content %}
-<h1>Admin</h1>
-<div class="grid-x grid-padding-x">
-  <div class="cell medium-6">
-    <div class="card">
-      <div class="card-section">
-        <h4>Users</h4>
-        <p>Manage user accounts and roles (viewer / editor / admin).</p>
-        <a href="/admin/users" class="button">Manage users</a>
-      </div>
-    </div>
+
+<header class="page-head">
+  <div class="title">
+    <span class="meta reveal">
+      <span class="crumbs">CONTROL</span>
+      <span>Section <b>§99</b> · Operations</span>
+    </span>
+    <h1 class="reveal reveal-1">Operations console</h1>
+    <small class="reveal reveal-2">Privileged commands. Roster of users; autodiscovery dispatch.</small>
   </div>
-  <div class="cell medium-6">
-    <div class="card">
-      <div class="card-section">
-        <h4>Autodiscovery</h4>
-        <p>Scrape <code>node_exporter</code> on a list of hostnames and upsert the resulting server records.</p>
-        <a href="/admin/discovery" class="button">Run discovery</a>
-      </div>
-    </div>
+  <div class="corner reveal reveal-3">
+    <b>RESTRICTED</b>
+    Admin only
   </div>
+</header>
+
+<div class="row gap-y" style="margin-top: 2rem;">
+  <a href="/admin/users" class="col-6 card feature bare" style="border-bottom: 0;">
+    <span class="corner-no">§99·A</span>
+    <span class="lbl">Roster</span>
+    <h3 style="margin-top: 0.5rem;">Users &amp; roles</h3>
+    <p>Promote, demote, retire user accounts. Three roles: <span class="pill role-viewer">viewer</span> <span class="pill role-editor">editor</span> <span class="pill role-admin">admin</span>.</p>
+    <span class="lbl" style="color: var(--hot); margin-top: 1rem;">→ Manage</span>
+  </a>
+
+  <a href="/admin/discovery" class="col-6 card feature bare" style="border-bottom: 0;">
+    <span class="corner-no">§99·B</span>
+    <span class="lbl">Dispatch</span>
+    <h3 style="margin-top: 0.5rem;">Autodiscovery</h3>
+    <p>Scrape <code>node_exporter</code> on a list of hostnames. Upserts hardware, network, OS, DMI fields. Human notes are never touched.</p>
+    <span class="lbl" style="color: var(--hot); margin-top: 1rem;">→ Run</span>
+  </a>
 </div>
+
 {% endblock %}

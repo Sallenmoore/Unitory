@@ -1,47 +1,77 @@
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Manifest{% endblock %}
 {% block content %}
-<div class="grid-x grid-padding-x">
-  <div class="cell">
-    <h1>Server inventory</h1>
+
+<header class="page-head">
+  <div class="title">
+    <span class="meta reveal">
+      <span class="crumbs">REGISTER</span>
+      <span>Section <b>§01</b> · Manifest</span>
+    </span>
+    <h1 class="reveal reveal-1">Server inventory</h1>
+    <small class="reveal reveal-2">Authoritative ledger for the BU&nbsp;Linux fleet — every host on record, every change stamped.</small>
   </div>
-  <div class="cell">
-    <label>
-      Quick search
+  <div class="corner reveal reveal-3">
+    <b>{{ recent | length }} ON&nbsp;FILE</b>
+    Recent · 12 shown
+  </div>
+</header>
+
+<div class="row gap-y" style="margin-top: 2rem;">
+  <section class="col-12 reveal reveal-1">
+    <div class="search-bar">
       <input type="search"
              name="q"
-             placeholder="Start typing a hostname…"
+             placeholder="Locate a host on the register…"
              hx-get="/servers/search"
              hx-trigger="keyup changed delay:200ms, search"
              hx-target="#search-results"
              hx-swap="innerHTML"
+             autocomplete="off"
              autofocus>
-    </label>
-    <div id="search-results"></div>
-  </div>
+    </div>
+    <ul id="search-results" class="search-results"></ul>
+  </section>
 
-  <div class="cell">
-    <h2>Recently updated</h2>
+  <section class="col-12">
+    <div class="section-head">
+      <span class="ix">§02</span>
+      <h3>Recently updated</h3>
+      <span class="rule"></span>
+      <span class="tail">Last touched, descending</span>
+    </div>
+
     {% if recent %}
-      <table class="hover stack">
+      <table class="t ledger">
         <thead>
-          <tr><th>Hostname</th><th>Env</th><th>Status</th><th>OS</th><th>Updated</th></tr>
+          <tr>
+            <th style="width: 28%;">Hostname</th>
+            <th>Env</th>
+            <th>Status</th>
+            <th>OS</th>
+            <th class="right">Updated</th>
+          </tr>
         </thead>
         <tbody>
           {% for s in recent %}
             <tr>
-              <td><a href="/servers/{{ s.pk }}">{{ s.hostname }}</a></td>
-              <td>{{ s.environment or "" }}</td>
-              <td>{{ s.status or "" }}</td>
-              <td>{{ s.os_name or "" }} {{ s.os_version or "" }}</td>
-              <td>{{ s.last_updated.strftime("%Y-%m-%d %H:%M") if s.last_updated else "" }}</td>
+              <td><a href="/servers/{{ s.pk }}" class="mono-cell">{{ s.hostname }}</a></td>
+              <td>{% if s.environment %}<span class="pill env-{{ s.environment }}">{{ s.environment }}</span>{% endif %}</td>
+              <td>{% if s.status %}<span class="pill status-{{ s.status }}">{{ s.status }}</span>{% endif %}</td>
+              <td class="mono-cell">{{ s.os_name or "—" }} {{ s.os_version or "" }}</td>
+              <td class="right mono-cell">{{ s.last_updated.strftime("%Y-%m-%d %H:%M") if s.last_updated else "—" }}</td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     {% else %}
-      <p class="muted">No servers yet. <a href="/servers/new">Add one</a> or run autodiscovery from the admin panel.</p>
+      <div class="empty">
+        No servers on the register yet ·
+        <a href="/servers/new">file a host</a> ·
+        or run autodiscovery from <a href="/admin">Ops</a>
+      </div>
     {% endif %}
-  </div>
+  </section>
 </div>
+
 {% endblock %}

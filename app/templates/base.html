@@ -3,46 +3,71 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Unitory{% endblock %} · Unitory</title>
+  <meta name="color-scheme" content="dark">
+  <title>{% block title %}Manifest{% endblock %} · UNITORY</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/css/foundation.min.css"
-        integrity="sha256-ogmFxjqiTMnZhxCqVmcqTvjfe1Y/ec4WaRj/aQPvn+I="
-        crossorigin="anonymous">
+        href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;800;900&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
   <link rel="stylesheet" href="/static/css/app.css">
   <script src="https://unpkg.com/htmx.org@1.9.12"
           integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
           crossorigin="anonymous" defer></script>
+  <script src="/static/js/app.js" defer></script>
 </head>
 <body>
-  <div class="top-bar">
-    <div class="top-bar-left">
-      <ul class="menu">
-        <li class="menu-text"><a href="/">Unitory</a></li>
-        <li><a href="/servers">Servers</a></li>
-        <li><a href="/servers/new">+ New</a></li>
-        {% if request.state.user and request.state.user.is_admin %}
-          <li><a href="/admin">Admin</a></li>
-        {% endif %}
-      </ul>
-    </div>
-    <div class="top-bar-right">
-      <ul class="menu">
-        {% if request.state.user %}
-          <li class="menu-text">{{ request.state.user.email }} <span class="role-badge role-{{ request.state.user.role }}">{{ request.state.user.role }}</span></li>
-          <li><a href="/auth/logout">Sign out</a></li>
-        {% else %}
-          <li><a href="/auth/login">Sign in</a></li>
-        {% endif %}
-      </ul>
+  <div class="bar-top">
+    <div class="frame">
+      <div class="ticks">
+        <span class="tick">UNITORY · BU LINUX TEAM</span>
+        <span class="tick">REGISTER OPEN</span>
+      </div>
+      <div class="ticks">
+        <span class="tick" id="batch-id">BATCH-000000</span>
+        <span class="tick" id="clock">00:00:00 UTC</span>
+      </div>
     </div>
   </div>
 
-  <main class="grid-container main-content">
+  <nav class="bar-nav">
+    <div class="frame">
+      <a class="brand" href="/">Unitory<span class="reg"></span></a>
+      <ul class="nav">
+        <li><a href="/" {% if request.url.path == "/" %}aria-current="page"{% endif %}>Manifest</a></li>
+        <li><a href="/servers" {% if request.url.path.startswith("/servers") %}aria-current="page"{% endif %}>Fleet</a></li>
+        {% if request.state.user and request.state.user.is_editor %}
+          <li><a href="/servers/new">Intake</a></li>
+        {% endif %}
+        {% if request.state.user and request.state.user.is_admin %}
+          <li><a href="/admin" {% if request.url.path.startswith("/admin") %}aria-current="page"{% endif %}>Ops</a></li>
+        {% endif %}
+      </ul>
+      <div class="nav-right">
+        {% if request.state.user %}
+          <span class="who">
+            <strong>{{ request.state.user.email }}</strong>
+            <span class="pill role-{{ request.state.user.role }}">{{ request.state.user.role }}</span>
+          </span>
+          <ul class="nav"><li><a href="/auth/logout">Sign out</a></li></ul>
+        {% else %}
+          <ul class="nav"><li><a href="/auth/login">Sign in</a></li></ul>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <main class="frame">
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="grid-container footer">
-    <small>Unitory · Binghamton University</small>
+  <footer class="bar-foot">
+    <div class="frame">
+      <span class="seal">UNITORY · MANIFEST CONTROL</span>
+      <span>BINGHAMTON UNIVERSITY · LINUX TEAM</span>
+      <span><a class="bare" href="/healthz">SYS · /HEALTHZ</a></span>
+    </div>
   </footer>
 </body>
 </html>
