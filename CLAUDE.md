@@ -14,7 +14,22 @@ This compose file is **not standalone** — it expects `mongo`, `redis`, `sops-d
 ./containers rebuild unitory          # build --no-cache
 ```
 
-The compose **service keys** in [compose.yml](compose.yml) are `unitory` (web) and `worker` (RQ); the worker's `container_name` is `unitory-worker`, but the docker-compose service key — what `./containers <action> <svc>` takes — is just `worker`. Both services share one image and bind-mount `./app` and `./worker` for live reload (`uvicorn --reload`). `REDIS_PASSWORD` is read from `/run/secrets/redis.pass` (decrypted by `sops-decrypt`) at container start — see the `command:` line in [compose.yml](compose.yml).
+The compose **service keys** in [compose.yml](compose.yml) are `unitory` (web) and `worker` (RQ); the worker's `container_name` is `unitory-worker`, but the docker-compose service key — what `./containers <action> <svc>` takes — is just `worker`. Both services share one image and bind-mount `./app` and `./worker` for live reload (`uvicorn --reload`).
+
+### Secrets
+
+Sensitive values are read from sops-decrypted files under `/run/secrets/` when present, with graceful fallback to plain env vars (so `.env` still works during a phased migration). Mapping:
+
+| App env var | Sops file | How it's read |
+|---|---|---|
+| `REDIS_PASSWORD` | `/run/secrets/redis.pass` | shell-export in `command:` (provided by `dockerStacks/common/redis`) |
+| `DB_PASSWORD` | `/run/secrets/unitory.db.pass` | shell-export in `command:` (graceful — only if file present) |
+| `SESSION_SECRET` | `/run/secrets/unitory.session` | `SESSION_SECRET_FILE` consumed by [`_env_or_file`](app/config.py) in `Settings` |
+| `GOOGLE_AUTH_CLIENT_SECRET` | `/run/secrets/unitory.google.secret` | `GOOGLE_AUTH_CLIENT_SECRET_FILE` consumed by [`_env_or_file`](app/config.py) |
+
+Adding a new sensitive setting: prefer the `_FILE`-env-var pattern (extend `Settings` in `app/config.py` with `_env_or_file("NEW_SETTING")`); reach for shell-export in `command:` only when the consumer is the framework (`autonomous-app`) or some other library that reads `os.environ` at import time and won't honor a `_FILE` indirection.
+
+The encrypted `*.enc` files themselves live in `dockerStacks/common/secrets/` (a different repo). `sops-decrypt` decants them into the `secrets` tmpfs at boot; if a secret is missing there, the container starts with the plain env-var fallback.
 
 Tests run on the **host**, not in the container — that is also how CI runs them:
 
@@ -26,7 +41,7 @@ pytest -m unit tests/test_markdown.py::test_name     # single test
 
 `make test-integration` is currently broken (it `cd`s into `tests/` expecting a compose file that doesn't exist). For local integration runs, point Mongo/Redis env vars at running instances and call `pytest -m integration` directly — CI does this with GitHub Actions service containers (see [test-integration.yml](.github/workflows/test-integration.yml)). Python 3.13+ is required.
 
-`.env` is gitignored and must exist for compose to parse — copy [.env.example](.env.example) and fill in the placeholders (`SESSION_SECRET`, `DB_PASSWORD`, `GOOGLE_AUTH_CLIENT_ID`, `GOOGLE_AUTH_CLIENT_SECRET`). All accepted keys are read in [app/config.py](app/config.py).
+`.env` is gitignored and must exist for compose to parse — copy [.env.example](.env.example) and fill in `GOOGLE_AUTH_CLIENT_ID` plus any non-secret overrides. The four secret values (`SESSION_SECRET`, `DB_PASSWORD`, `GOOGLE_AUTH_CLIENT_SECRET`, plus `REDIS_PASSWORD`) live in sops once that side is wired up — see [Secrets](#secrets) above; `.env`'s plaintext copies are tolerated as a fallback during the migration.
 
 ### Startup dependencies
 

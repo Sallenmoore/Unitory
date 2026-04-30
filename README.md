@@ -26,13 +26,20 @@ The compose service keys are **`unitory`** (web) and **`worker`** (RQ); the
 worker's container is named `unitory-worker`. `REDIS_PASSWORD` is read from
 `/run/secrets/redis.pass`, populated by the `sops-decrypt` bootstrap service.
 
-### `.env`
+### Configuration & secrets
 
 `.env` is gitignored and must exist for compose to parse. Copy
-[.env.example](.env.example) to `.env` and fill in the four placeholder
-values (`SESSION_SECRET`, `DB_PASSWORD`, `GOOGLE_AUTH_CLIENT_ID`,
-`GOOGLE_AUTH_CLIENT_SECRET`). All accepted keys are documented in
+[.env.example](.env.example) to `.env` and fill in `GOOGLE_AUTH_CLIENT_ID`
+and any non-default overrides (e.g. `APP_BASE_URL`,
+`ALLOWED_EMAIL_DOMAINS`). All accepted keys are documented in
 [app/config.py](app/config.py).
+
+The four sensitive values (`SESSION_SECRET`, `DB_PASSWORD`,
+`GOOGLE_AUTH_CLIENT_SECRET`, plus `REDIS_PASSWORD` from the shared Redis
+service) are sourced from sops-decrypted files under `/run/secrets/`.
+The `*_FILE` env vars in [compose.yml](compose.yml) tell the app where
+to find them; `.env`'s plaintext copies are honored as a fallback if
+the sops files are missing, which keeps the migration phased.
 
 ### First-user bootstrap
 
