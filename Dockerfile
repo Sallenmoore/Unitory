@@ -18,7 +18,7 @@ COPY app /app/app
 COPY worker /app/worker
 COPY tests /app/tests
 
-RUN chmod +x /app/worker/entrypoint.sh
+RUN chmod +x /app/worker/entrypoint.sh /app/worker/healthcheck.py
 
 EXPOSE 8000
 

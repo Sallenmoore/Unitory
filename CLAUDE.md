@@ -32,6 +32,12 @@ pytest -m unit tests/test_markdown.py::test_name     # single test
 
 `unitory` and `unitory-worker` wait on `sops-decrypt` (healthy), `mongo` (healthy), and `redis` (started). The mongo healthcheck lives in [dockerStacks/common/mongo/compose.yml](../common/mongo/compose.yml), not here — don't add a duplicate. This ordering prevents the OAuth-callback `ServerSelectionTimeoutError` that motivated the gating in the first place.
 
+### Healthchecks
+
+`unitory` exposes `GET /healthz` ([app/routes/health.py](app/routes/health.py)) which pings Mongo and Redis with short (~1.5s) timeouts and returns `{"db": "ok", "redis": "ok"}` on 200, or `{"db": "fail: ...", ...}` on 503 if either is down. `compose.yml` calls it via `curl -fs` every 30s.
+
+`unitory-worker` has no HTTP surface; its compose healthcheck runs [worker/healthcheck.py](worker/healthcheck.py), a tiny script that pings Redis with the same credentials the worker uses. Mongo is intentionally not pinged from the worker — the worker's "healthy" state is "process running, listening on Redis." Mongo failures surface as job failures, not container-level unhealthy.
+
 ### Test tiers
 
 Tests are split into two tiers via pytest markers (registered in [pyproject.toml](pyproject.toml); `--strict-markers` is enforced):
@@ -49,7 +55,7 @@ The `autonomous-app` package (PyPI, pinned `>=0.3.113` in [requirements.txt](req
 
 ### Request flow
 
-[app/main.py](app/main.py) mounts four routers — `auth`, `api`, `admin`, `web` — and registers custom 401/403 handlers that branch on `/api/` path prefix: API paths get JSON/text errors, HTML paths redirect to `/auth/login` or render `403.html`. Auth is cookie-session (`SessionMiddleware`) storing only `user_pk`; the current user is resolved per-request by [get_current_user](app/deps.py) and role-gated via `require_viewer` / `require_editor` / `require_admin` dependencies. Templates receive the user via `request.state.user` (attached by the same dependencies).
+[app/main.py](app/main.py) mounts five routers — `health`, `auth`, `api`, `admin`, `web` — and registers custom 401/403 handlers that branch on `/api/` path prefix: API paths get JSON/text errors, HTML paths redirect to `/auth/login` or render `403.html`. Auth is cookie-session (`SessionMiddleware`) storing only `user_pk`; the current user is resolved per-request by [get_current_user](app/deps.py) and role-gated via `require_viewer` / `require_editor` / `require_admin` dependencies. Templates receive the user via `request.state.user` (attached by the same dependencies).
 
 ### Roles and the first-admin invariant
 
