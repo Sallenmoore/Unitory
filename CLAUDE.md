@@ -14,7 +14,11 @@ This compose file is **not standalone** — it expects `mongo`, `redis`, `sops-d
 ./containers rebuild unitory          # build --no-cache
 ```
 
-The compose **service keys** in [compose.yml](compose.yml) are `unitory` (web) and `worker` (RQ); the worker's `container_name` is `unitory-worker`, but the docker-compose service key — what `./containers <action> <svc>` takes — is just `worker`. Both services share one image and bind-mount `./app` and `./worker` for live reload (`uvicorn --reload`).
+The compose **service keys** in [compose.yml](compose.yml) are `unitory` (web) and `worker` (RQ); the worker's `container_name` is `unitory-worker`, but the docker-compose service key — what `./containers <action> <svc>` takes — is just `worker`. Both services share one image. Production runs `uvicorn --workers 2 --proxy-headers --forwarded-allow-ips '*'` from the baked image with no source bind mounts — code changes require `./containers rebuild unitory`.
+
+### Dev mode (live reload)
+
+[compose.dev.yml](compose.dev.yml) is a manually-invoked overlay that re-adds `./app` and `./worker` bind mounts and switches `unitory` back to `--reload` (single worker). The `./containers` driver does **not** auto-discover it (the `find -maxdepth 3 -name compose.yml` glob ignores `compose.dev.yml`), so you have to invoke docker compose directly with the explicit `-f` chain documented in [README.md](README.md). Don't add live-reload behavior to production `compose.yml`.
 
 ### Secrets
 
@@ -52,10 +56,6 @@ pytest -m unit tests/test_markdown.py::test_name     # single test
 `unitory` exposes `GET /healthz` ([app/routes/health.py](app/routes/health.py)) which pings Mongo and Redis with short (~1.5s) timeouts and returns `{"db": "ok", "redis": "ok"}` on 200, or `{"db": "fail: ...", ...}` on 503 if either is down. `compose.yml` calls it via `curl -fs` every 30s.
 
 `unitory-worker` has no HTTP surface; its compose healthcheck runs [worker/healthcheck.py](worker/healthcheck.py), a tiny script that pings Redis with the same credentials the worker uses. Mongo is intentionally not pinged from the worker — the worker's "healthy" state is "process running, listening on Redis." Mongo failures surface as job failures, not container-level unhealthy.
-
-### Startup dependencies
-
-The `web` and `worker` services wait for MongoDB to be healthy before starting (via `depends_on` with `service_healthy` condition). MongoDB health is checked via `mongosh --eval "db.adminCommand('ping')"` every 5 seconds with a 10-second start period and 10 retries. This prevents authentication failures during OAuth callbacks when MongoDB hasn't finished initializing.
 
 ### Test tiers
 

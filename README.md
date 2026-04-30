@@ -26,6 +26,29 @@ The compose service keys are **`unitory`** (web) and **`worker`** (RQ); the
 worker's container is named `unitory-worker`. `REDIS_PASSWORD` is read from
 `/run/secrets/redis.pass`, populated by the `sops-decrypt` bootstrap service.
 
+Production runs `uvicorn --workers 2 --proxy-headers` from the baked image
+with no source bind mounts — code edits require `./containers rebuild
+unitory`. For live-reload iteration use the dev overlay below.
+
+### Local dev (live reload)
+
+[`compose.dev.yml`](compose.dev.yml) is a manually-invoked overlay that
+re-adds `--reload`, drops to a single worker, and bind-mounts `./app` and
+`./worker` so edits are picked up without a rebuild. The `./containers`
+driver does not auto-discover it (deliberate); call docker compose
+directly:
+
+```bash
+cd ~/dockerStacks
+docker compose \
+  -f common/compose.yml \
+  -f common/mongo/compose.yml \
+  -f common/redis/compose.yml \
+  -f inventory/compose.yml \
+  -f inventory/compose.dev.yml \
+  up unitory worker
+```
+
 ### Configuration & secrets
 
 `.env` is gitignored and must exist for compose to parse. Copy

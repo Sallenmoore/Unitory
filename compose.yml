@@ -4,7 +4,7 @@ services:
       context: ../inventory
     container_name: unitory
     restart: unless-stopped
-    command: sh -c '[ -f /run/secrets/unitory.db.pass ] && export DB_PASSWORD="$$(cat /run/secrets/unitory.db.pass)"; export REDIS_PASSWORD=$$(cat /run/secrets/redis.pass); exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload'
+    command: sh -c '[ -f /run/secrets/unitory.db.pass ] && export DB_PASSWORD="$$(cat /run/secrets/unitory.db.pass)"; export REDIS_PASSWORD=$$(cat /run/secrets/redis.pass); exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2 --proxy-headers --forwarded-allow-ips "*"'
     env_file: ../inventory/.env
     environment:
       DB_HOST: mongo
@@ -14,8 +14,6 @@ services:
       SESSION_SECRET_FILE: /run/secrets/unitory.session
       GOOGLE_AUTH_CLIENT_SECRET_FILE: /run/secrets/unitory.google.secret
     volumes:
-      - ../inventory/app:/app/app
-      - ../inventory/worker:/app/worker
       - secrets:/run/secrets:ro
     depends_on:
       sops-decrypt:
@@ -57,8 +55,6 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
     volumes:
-      - ../inventory/app:/app/app
-      - ../inventory/worker:/app/worker
       - secrets:/run/secrets:ro
     depends_on:
       sops-decrypt:
