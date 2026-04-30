@@ -1,0 +1,30 @@
+# Dev-mode overlay for local iteration. NOT discovered by ./containers
+# (the driver only finds plain compose.yml files); invoke explicitly:
+#
+#   cd dockerStacks
+#   docker compose \
+#     -f common/compose.yml \
+#     -f common/mongo/compose.yml \
+#     -f common/redis/compose.yml \
+#     -f inventory/compose.yml \
+#     -f inventory/compose.dev.yml \
+#     up unitory worker
+#
+# Differences from production:
+#   - bind-mounts ./app and ./worker so edits are live
+#   - drops --workers 2 in favor of --reload (incompatible with multi-worker)
+#   - keeps the same secret-export shell prelude as production
+
+services:
+  unitory:
+    command: sh -c '[ -f /run/secrets/unitory.db.pass ] && export DB_PASSWORD="$$(cat /run/secrets/unitory.db.pass)"; export REDIS_PASSWORD=$$(cat /run/secrets/redis.pass); exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload'
+    volumes:
+      - ../inventory/app:/app/app
+      - ../inventory/worker:/app/worker
+      - secrets:/run/secrets:ro
+
+  worker:
+    volumes:
+      - ../inventory/app:/app/app
+      - ../inventory/worker:/app/worker
+      - secrets:/run/secrets:ro
