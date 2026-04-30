@@ -1,74 +1,92 @@
 {% extends "base.html" %}
-{% block title %}Servers{% endblock %}
+{% block title %}Fleet{% endblock %}
 {% block content %}
-<div class="grid-x grid-padding-x">
-  <div class="cell small-12">
-    <h1>Servers</h1>
-  </div>
 
-  <div class="cell small-12">
-    <form method="get" action="/servers" class="grid-x grid-padding-x filters">
-      <div class="cell small-12 medium-6">
-        <label>Search hostname
-          <input type="search" name="q" value="{{ filters.q }}" placeholder="hostname contains…">
-        </label>
-      </div>
-      <div class="cell small-6 medium-3">
-        <label>Environment
-          <select name="environment">
-            <option value="">Any</option>
-            {% for e in environments %}
-              <option value="{{ e }}" {% if e == filters.environment %}selected{% endif %}>{{ e }}</option>
-            {% endfor %}
-          </select>
-        </label>
-      </div>
-      <div class="cell small-6 medium-3">
-        <label>Status
-          <select name="status">
-            <option value="">Any</option>
-            {% for st in statuses %}
-              <option value="{{ st }}" {% if st == filters.status %}selected{% endif %}>{{ st }}</option>
-            {% endfor %}
-          </select>
-        </label>
-      </div>
-      <div class="cell">
-        <button type="submit" class="button">Filter</button>
-        <a href="/servers" class="button secondary">Reset</a>
-        {% if request.state.user and request.state.user.is_editor %}
-          <a href="/servers/new" class="button success float-right">+ New server</a>
-        {% endif %}
-      </div>
-    </form>
+<header class="page-head">
+  <div class="title">
+    <span class="meta reveal">
+      <span class="crumbs">REGISTER</span>
+      <span>Section <b>§02</b> · Fleet</span>
+    </span>
+    <h1 class="reveal reveal-1">Fleet manifest</h1>
+    <small class="reveal reveal-2">All hosts on file — filter the column, narrow the list, locate the box.</small>
   </div>
+  <div class="corner reveal reveal-3">
+    <b>{{ servers | length }} MATCH{% if servers | length != 1 %}ES{% endif %}</b>
+    Filtered view
+  </div>
+</header>
 
-  <div class="cell small-12">
-    {% if servers %}
-      <table class="hover stack">
-        <thead>
-          <tr>
-            <th>Hostname</th><th>Env</th><th>Status</th><th>Type</th>
-            <th>OS</th><th>Owner</th><th>Tags</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in servers %}
-            <tr>
-              <td><a href="/servers/{{ s.pk }}">{{ s.hostname }}</a></td>
-              <td>{{ s.environment or "" }}</td>
-              <td>{{ s.status or "" }}</td>
-              <td>{{ s.server_type or "" }}</td>
-              <td>{{ s.os_name or "" }} {{ s.os_version or "" }}</td>
-              <td>{{ s.owner or "" }}</td>
-              <td>{% for t in (s.tags or []) %}<span class="tag">{{ t }}</span>{% endfor %}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p class="muted">No servers match.</p>
+<form method="get" action="/servers" class="row" style="margin: 2rem 0 1.5rem;">
+  <div class="col-6 field">
+    <span class="lbl">Hostname contains</span>
+    <input type="search" name="q" value="{{ filters.q }}" placeholder="search hostname…">
+  </div>
+  <div class="col-3 field">
+    <span class="lbl">Environment</span>
+    <select name="environment">
+      <option value="">— ANY —</option>
+      {% for e in environments %}
+        <option value="{{ e }}" {% if e == filters.environment %}selected{% endif %}>{{ e }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-3 field">
+    <span class="lbl">Status</span>
+    <select name="status">
+      <option value="">— ANY —</option>
+      {% for st in statuses %}
+        <option value="{{ st }}" {% if st == filters.status %}selected{% endif %}>{{ st }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-12 cluster" style="justify-content: space-between;">
+    <div class="btn-row">
+      <button type="submit" class="btn primary">Filter</button>
+      <a href="/servers" class="btn ghost">Reset</a>
+    </div>
+    {% if request.state.user and request.state.user.is_editor %}
+      <a href="/servers/new" class="btn">＋ New server</a>
     {% endif %}
   </div>
+</form>
+
+<div class="section-head">
+  <span class="ix">§02·A</span>
+  <h3>Manifest</h3>
+  <span class="rule"></span>
+  <span class="tail">{{ servers | length }} record{% if servers | length != 1 %}s{% endif %}</span>
 </div>
+
+{% if servers %}
+  <table class="t ledger">
+    <thead>
+      <tr>
+        <th>Hostname</th>
+        <th>Env</th>
+        <th>Status</th>
+        <th>Type</th>
+        <th>OS</th>
+        <th>Owner</th>
+        <th>Tags</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in servers %}
+        <tr>
+          <td><a class="mono-cell" href="/servers/{{ s.pk }}">{{ s.hostname }}</a></td>
+          <td>{% if s.environment %}<span class="pill env-{{ s.environment }}">{{ s.environment }}</span>{% endif %}</td>
+          <td>{% if s.status %}<span class="pill status-{{ s.status }}">{{ s.status }}</span>{% endif %}</td>
+          <td class="mono-cell">{{ s.server_type or "—" }}</td>
+          <td class="mono-cell">{{ s.os_name or "—" }} {{ s.os_version or "" }}</td>
+          <td>{{ s.owner or "—" }}</td>
+          <td>{% for t in (s.tags or []) %}<span class="tag">{{ t }}</span>{% else %}—{% endfor %}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="empty">No servers match the current filter.</div>
+{% endif %}
+
 {% endblock %}

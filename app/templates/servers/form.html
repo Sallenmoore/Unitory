@@ -1,112 +1,110 @@
 {% extends "base.html" %}
-{% block title %}{{ "Edit " + server.hostname if server else "New server" }}{% endblock %}
+{% block title %}{{ "Edit " + server.hostname if server else "Intake" }}{% endblock %}
 {% block content %}
 {% set action = "/servers/" + server.pk|string if server else "/servers" %}
-<h1>{{ "Edit " + server.hostname if server else "New server" }}</h1>
-<form method="post" action="{{ action }}" class="grid-x grid-padding-x">
-  <fieldset class="cell small-12">
+
+<header class="page-head">
+  <div class="title">
+    <span class="meta reveal">
+      <a class="crumbs bare" href="/servers">FLEET</a>
+      <span>{{ "AMEND" if server else "INTAKE" }} ·
+        {% if server %}<b>#{{ server.pk | string | upper }}</b>{% else %}<b>NEW RECORD</b>{% endif %}
+      </span>
+    </span>
+    <h1 class="reveal reveal-1">{{ "Amend " + server.hostname if server else "File a host" }}</h1>
+    <small class="reveal reveal-2">All fields optional except hostname. Discovered fields will be overwritten on the next scan; human fields are sacred.</small>
+  </div>
+  <div class="corner reveal reveal-3">
+    <b>{{ "REV" if server else "NEW" }}</b>
+    {% if server %}{{ server.last_updated.strftime("%Y-%m-%d %H:%M") if server.last_updated else "—" }}{% else %}—{% endif %}
+  </div>
+</header>
+
+<form method="post" action="{{ action }}" style="margin-top: 2rem;">
+
+  <fieldset>
     <legend>Identity</legend>
-    <div class="grid-x grid-padding-x">
-      <div class="cell medium-6">
-        <label>Hostname*
-          <input type="text" name="hostname" required value="{{ server.hostname if server else '' }}">
-        </label>
-      </div>
-      <div class="cell medium-6">
-        <label>FQDN
-          <input type="text" name="fqdn" value="{{ server.fqdn if server else '' }}">
-        </label>
-      </div>
-      <div class="cell medium-4">
-        <label>Type
-          <select name="server_type">
-            {% for t in server_types %}
-              <option value="{{ t }}" {% if server and server.server_type == t %}selected{% endif %}>{{ t }}</option>
-            {% endfor %}
-          </select>
-        </label>
-      </div>
-      <div class="cell medium-4">
-        <label>Environment
-          <select name="environment">
-            {% for e in environments %}
-              <option value="{{ e }}" {% if server and server.environment == e %}selected{% endif %}>{{ e }}</option>
-            {% endfor %}
-          </select>
-        </label>
-      </div>
-      <div class="cell medium-4">
-        <label>Status
-          <select name="status">
-            {% for st in statuses %}
-              <option value="{{ st }}" {% if server and server.status == st %}selected{% endif %}>{{ st }}</option>
-            {% endfor %}
-          </select>
-        </label>
-      </div>
+    <div class="row">
+      <div class="col-6"><label>Hostname *<input type="text" name="hostname" required value="{{ server.hostname if server else '' }}"></label></div>
+      <div class="col-6"><label>FQDN<input type="text" name="fqdn" value="{{ server.fqdn if server else '' }}"></label></div>
+      <div class="col-4"><label>Type
+        <select name="server_type">
+          {% for t in server_types %}<option value="{{ t }}" {% if server and server.server_type == t %}selected{% endif %}>{{ t }}</option>{% endfor %}
+        </select>
+      </label></div>
+      <div class="col-4"><label>Environment
+        <select name="environment">
+          {% for e in environments %}<option value="{{ e }}" {% if server and server.environment == e %}selected{% endif %}>{{ e }}</option>{% endfor %}
+        </select>
+      </label></div>
+      <div class="col-4"><label>Status
+        <select name="status">
+          {% for st in statuses %}<option value="{{ st }}" {% if server and server.status == st %}selected{% endif %}>{{ st }}</option>{% endfor %}
+        </select>
+      </label></div>
     </div>
   </fieldset>
 
-  <fieldset class="cell small-12">
-    <legend>Ops</legend>
-    <div class="grid-x grid-padding-x">
-      <div class="cell medium-4"><label>Owner<input type="text" name="owner" value="{{ server.owner if server else '' }}"></label></div>
-      <div class="cell medium-4"><label>Purpose<input type="text" name="purpose" value="{{ server.purpose if server else '' }}"></label></div>
-      <div class="cell medium-4"><label>Patch window<input type="text" name="patch_window" value="{{ server.patch_window if server else '' }}"></label></div>
-      <div class="cell medium-6"><label>Tags (comma-separated)<input type="text" name="tags" value="{{ (server.tags or []) | join(', ') if server else '' }}"></label></div>
-      <div class="cell medium-6"><label>Compliance tags<input type="text" name="compliance_tags" value="{{ (server.compliance_tags or []) | join(', ') if server else '' }}"></label></div>
+  <fieldset>
+    <legend>Operations</legend>
+    <div class="row">
+      <div class="col-4"><label>Owner<input type="text" name="owner" value="{{ server.owner if server else '' }}"></label></div>
+      <div class="col-4"><label>Purpose<input type="text" name="purpose" value="{{ server.purpose if server else '' }}"></label></div>
+      <div class="col-4"><label>Patch window<input type="text" name="patch_window" value="{{ server.patch_window if server else '' }}"></label></div>
+      <div class="col-6"><label>Tags (comma-separated)<input type="text" name="tags" value="{{ (server.tags or []) | join(', ') if server else '' }}"></label></div>
+      <div class="col-6"><label>Compliance tags<input type="text" name="compliance_tags" value="{{ (server.compliance_tags or []) | join(', ') if server else '' }}"></label></div>
     </div>
   </fieldset>
 
-  <fieldset class="cell small-12">
+  <fieldset>
     <legend>Hardware</legend>
-    <div class="grid-x grid-padding-x">
-      <div class="cell medium-6"><label>Vendor<input type="text" name="vendor" value="{{ server.vendor if server else '' }}"></label></div>
-      <div class="cell medium-6"><label>Product<input type="text" name="product_name" value="{{ server.product_name if server else '' }}"></label></div>
-      <div class="cell medium-4"><label>Serial #<input type="text" name="serial_number" value="{{ server.serial_number if server else '' }}"></label></div>
-      <div class="cell medium-4"><label>Asset tag<input type="text" name="asset_tag" value="{{ server.asset_tag if server else '' }}"></label></div>
-      <div class="cell medium-4"><label>Hypervisor<input type="text" name="hypervisor" value="{{ server.hypervisor if server else '' }}"></label></div>
-      <div class="cell medium-4"><label>CPU model<input type="text" name="cpu_model" value="{{ server.cpu_model if server else '' }}"></label></div>
-      <div class="cell medium-2"><label>CPU cores<input type="number" name="cpu_cores" value="{{ server.cpu_cores if server else '' }}"></label></div>
-      <div class="cell medium-3"><label>RAM (bytes)<input type="number" name="ram_bytes" value="{{ server.ram_bytes if server else '' }}"></label></div>
-      <div class="cell medium-3"><label>Disk (bytes)<input type="number" name="disk_bytes" value="{{ server.disk_bytes if server else '' }}"></label></div>
+    <div class="row">
+      <div class="col-6"><label>Vendor<input type="text" name="vendor" value="{{ server.vendor if server else '' }}"></label></div>
+      <div class="col-6"><label>Product<input type="text" name="product_name" value="{{ server.product_name if server else '' }}"></label></div>
+      <div class="col-4"><label>Serial #<input type="text" name="serial_number" value="{{ server.serial_number if server else '' }}"></label></div>
+      <div class="col-4"><label>Asset tag<input type="text" name="asset_tag" value="{{ server.asset_tag if server else '' }}"></label></div>
+      <div class="col-4"><label>Hypervisor<input type="text" name="hypervisor" value="{{ server.hypervisor if server else '' }}"></label></div>
+      <div class="col-4"><label>CPU model<input type="text" name="cpu_model" value="{{ server.cpu_model if server else '' }}"></label></div>
+      <div class="col-3"><label>CPU cores<input type="number" name="cpu_cores" value="{{ server.cpu_cores if server else '' }}"></label></div>
+      <div class="col-3"><label>RAM (bytes)<input type="number" name="ram_bytes" value="{{ server.ram_bytes if server else '' }}"></label></div>
+      <div class="col-3"><label>Disk (bytes)<input type="number" name="disk_bytes" value="{{ server.disk_bytes if server else '' }}"></label></div>
     </div>
   </fieldset>
 
-  <fieldset class="cell small-12">
+  <fieldset>
     <legend>System</legend>
-    <div class="grid-x grid-padding-x">
-      <div class="cell medium-4"><label>OS name<input type="text" name="os_name" value="{{ server.os_name if server else '' }}"></label></div>
-      <div class="cell medium-4"><label>OS version<input type="text" name="os_version" value="{{ server.os_version if server else '' }}"></label></div>
-      <div class="cell medium-4"><label>Kernel<input type="text" name="kernel" value="{{ server.kernel if server else '' }}"></label></div>
+    <div class="row">
+      <div class="col-4"><label>OS name<input type="text" name="os_name" value="{{ server.os_name if server else '' }}"></label></div>
+      <div class="col-4"><label>OS version<input type="text" name="os_version" value="{{ server.os_version if server else '' }}"></label></div>
+      <div class="col-4"><label>Kernel<input type="text" name="kernel" value="{{ server.kernel if server else '' }}"></label></div>
     </div>
   </fieldset>
 
-  <fieldset class="cell small-12">
-    <legend>Network</legend>
-    <div class="grid-x grid-padding-x">
-      <div class="cell medium-6"><label>IPs (comma-separated)<input type="text" name="ip_addresses" value="{{ (server.ip_addresses or []) | join(', ') if server else '' }}"></label></div>
-      <div class="cell medium-6"><label>MACs (comma-separated)<input type="text" name="mac_addresses" value="{{ (server.mac_addresses or []) | join(', ') if server else '' }}"></label></div>
-      <div class="cell medium-4"><label>VLAN<input type="text" name="vlan" value="{{ server.vlan if server else '' }}"></label></div>
-      <div class="cell medium-4"><label>Rack<input type="text" name="rack" value="{{ server.rack if server else '' }}"></label></div>
-      <div class="cell medium-4"><label>Location<input type="text" name="location" value="{{ server.location if server else '' }}"></label></div>
+  <fieldset>
+    <legend>Network &amp; location</legend>
+    <div class="row">
+      <div class="col-6"><label>IPs (comma-separated)<input type="text" name="ip_addresses" value="{{ (server.ip_addresses or []) | join(', ') if server else '' }}"></label></div>
+      <div class="col-6"><label>MACs (comma-separated)<input type="text" name="mac_addresses" value="{{ (server.mac_addresses or []) | join(', ') if server else '' }}"></label></div>
+      <div class="col-4"><label>VLAN<input type="text" name="vlan" value="{{ server.vlan if server else '' }}"></label></div>
+      <div class="col-4"><label>Rack<input type="text" name="rack" value="{{ server.rack if server else '' }}"></label></div>
+      <div class="col-4"><label>Location<input type="text" name="location" value="{{ server.location if server else '' }}"></label></div>
     </div>
   </fieldset>
 
-  <fieldset class="cell small-12">
+  <fieldset>
     <legend>Notes (markdown)</legend>
-    <div class="grid-x grid-padding-x">
-      <div class="cell medium-6">
+    <div class="row">
+      <div class="col-6">
+        <label style="margin-bottom: 0.4rem;">Source</label>
         <textarea name="notes" rows="14"
                   hx-post="/servers/preview-notes"
                   hx-trigger="keyup changed delay:400ms"
                   hx-target="#notes-preview"
                   hx-include="this">{{ server.notes if server else '' }}</textarea>
       </div>
-      <div class="cell medium-6">
-        <div class="notes-preview-frame">
-          <small class="muted">Preview</small>
-          <article id="notes-preview" class="markdown-body">
+      <div class="col-6">
+        <div class="preview">
+          <article id="notes-preview" class="md" style="border:0; background: transparent; padding: 0;">
             {{ server.notes | markdown | safe if server and server.notes else '' }}
           </article>
         </div>
@@ -114,9 +112,10 @@
     </div>
   </fieldset>
 
-  <div class="cell">
-    <button type="submit" class="button success">Save</button>
-    <a href="{{ '/servers/' + server.pk|string if server else '/servers' }}" class="button secondary">Cancel</a>
+  <div class="btn-row" style="margin-top: 1.5rem;">
+    <button type="submit" class="btn primary">Save record</button>
+    <a href="{{ '/servers/' + server.pk|string if server else '/servers' }}" class="btn ghost">Cancel</a>
   </div>
 </form>
+
 {% endblock %}
