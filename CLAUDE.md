@@ -4,16 +4,54 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-Everything runs inside Docker Compose — the app depends on Mongo + Redis + the `autonomous` submodule (editable install at `/app/autonomous` in the image), so running outside the container is not the supported path.
+This compose file is **not standalone** — it expects `mongo`, `redis`, `sops-decrypt`, the `docknet` network, and the `secrets` volume to come from the parent [dockerStacks](../) tree. Bring the app up via the parent driver, not `docker compose` directly:
 
 ```bash
-docker compose up --build             # full dev stack with --reload uvicorn
-docker compose run --rm web pytest    # run the test suite
-docker compose run --rm web pytest tests/test_markdown.py::test_name  # single test
-docker compose logs -f worker         # tail the RQ worker
+# from /home/itsadmin/dockerStacks/
+./containers up unitory worker        # web + RQ worker (and their deps via depends_on)
+./containers logs worker              # tail the RQ worker (service key is 'worker', container is 'unitory-worker')
+./containers down unitory worker
+./containers rebuild unitory          # build --no-cache
 ```
 
-The `web` service mounts `./app`, `./autonomous`, and `./worker` as volumes so edits are live. Python 3.13+ is required.
+The compose **service keys** in [compose.yml](compose.yml) are `unitory` (web) and `worker` (RQ); the worker's `container_name` is `unitory-worker`, but the docker-compose service key — what `./containers <action> <svc>` takes — is just `worker`. Both services share one image and bind-mount `./app` and `./worker` for live reload (`uvicorn --reload`).
+
+### Secrets
+
+Sensitive values are read from sops-decrypted files under `/run/secrets/` when present, with graceful fallback to plain env vars (so `.env` still works during a phased migration). Mapping:
+
+| App env var | Sops file | How it's read |
+|---|---|---|
+| `REDIS_PASSWORD` | `/run/secrets/redis.pass` | shell-export in `command:` (provided by `dockerStacks/common/redis`) |
+| `DB_PASSWORD` | `/run/secrets/unitory.db.pass` | shell-export in `command:` (graceful — only if file present) |
+| `SESSION_SECRET` | `/run/secrets/unitory.session` | `SESSION_SECRET_FILE` consumed by [`_env_or_file`](app/config.py) in `Settings` |
+| `GOOGLE_AUTH_CLIENT_SECRET` | `/run/secrets/unitory.google.secret` | `GOOGLE_AUTH_CLIENT_SECRET_FILE` consumed by [`_env_or_file`](app/config.py) |
+
+Adding a new sensitive setting: prefer the `_FILE`-env-var pattern (extend `Settings` in `app/config.py` with `_env_or_file("NEW_SETTING")`); reach for shell-export in `command:` only when the consumer is the framework (`autonomous-app`) or some other library that reads `os.environ` at import time and won't honor a `_FILE` indirection.
+
+The encrypted `*.enc` files themselves live in `dockerStacks/common/secrets/` (a different repo). `sops-decrypt` decants them into the `secrets` tmpfs at boot; if a secret is missing there, the container starts with the plain env-var fallback.
+
+Tests run on the **host**, not in the container — that is also how CI runs them:
+
+```bash
+pip install -r requirements.txt -r requirements-dev.txt && pip install -e .
+make test-unit                                       # pytest -m unit
+pytest -m unit tests/test_markdown.py::test_name     # single test
+```
+
+`make test-integration` is currently broken (it `cd`s into `tests/` expecting a compose file that doesn't exist). For local integration runs, point Mongo/Redis env vars at running instances and call `pytest -m integration` directly — CI does this with GitHub Actions service containers (see [test-integration.yml](.github/workflows/test-integration.yml)). Python 3.13+ is required.
+
+`.env` is gitignored and must exist for compose to parse — copy [.env.example](.env.example) and fill in `GOOGLE_AUTH_CLIENT_ID` plus any non-secret overrides. The four secret values (`SESSION_SECRET`, `DB_PASSWORD`, `GOOGLE_AUTH_CLIENT_SECRET`, plus `REDIS_PASSWORD`) live in sops once that side is wired up — see [Secrets](#secrets) above; `.env`'s plaintext copies are tolerated as a fallback during the migration.
+
+### Startup dependencies
+
+`unitory` and `unitory-worker` wait on `sops-decrypt` (healthy), `mongo` (healthy), and `redis` (started). The mongo healthcheck lives in [dockerStacks/common/mongo/compose.yml](../common/mongo/compose.yml), not here — don't add a duplicate. This ordering prevents the OAuth-callback `ServerSelectionTimeoutError` that motivated the gating in the first place.
+
+### Healthchecks
+
+`unitory` exposes `GET /healthz` ([app/routes/health.py](app/routes/health.py)) which pings Mongo and Redis with short (~1.5s) timeouts and returns `{"db": "ok", "redis": "ok"}` on 200, or `{"db": "fail: ...", ...}` on 503 if either is down. `compose.yml` calls it via `curl -fs` every 30s.
+
+`unitory-worker` has no HTTP surface; its compose healthcheck runs [worker/healthcheck.py](worker/healthcheck.py), a tiny script that pings Redis with the same credentials the worker uses. Mongo is intentionally not pinged from the worker — the worker's "healthy" state is "process running, listening on Redis." Mongo failures surface as job failures, not container-level unhealthy.
 
 ### Startup dependencies
 
@@ -32,11 +70,11 @@ When adding a test, pick the tier. Unit tests must not import anything that open
 
 ### Dependency on the `autonomous` framework
 
-The `autonomous/` sibling directory is a submodule/editable-install that provides the ORM (`AutoModel` + `autoattr` typed fields backing MongoDB), auth primitives (`autonomous.auth.user.User`), and the RQ-backed task runner (`AutoTasks`). **It is not always checked out locally** but is installed into the Docker image and required for import. Models in [app/models/](app/models/) inherit from `AutoModel`; [AppUser](app/models/user.py) subclasses the framework `User` specifically to stop `authenticate()` from clobbering admin-promoted roles on each login and to bootstrap the first user as admin. Tests add `autonomous/src` to `sys.path` in [tests/conftest.py](tests/conftest.py).
+The `autonomous-app` package (PyPI, pinned `>=0.3.113` in [requirements.txt](requirements.txt)) provides the ORM (`AutoModel` + `autoattr` typed fields backing MongoDB), auth primitives (`autonomous.auth.user.User`), and the RQ-backed task runner (`AutoTasks`). It is installed into the image — it is **not** mounted from a sibling directory; the Dockerfile only `COPY`s `app/` and `worker/`. Models in [app/models/](app/models/) inherit from `AutoModel`; [AppUser](app/models/user.py) subclasses the framework `User` specifically to stop `authenticate()` from clobbering admin-promoted roles on each login and to bootstrap the first user as admin. [tests/conftest.py](tests/conftest.py) preemptively inserts `autonomous/src` onto `sys.path` so a locally-checked-out copy (when one exists alongside the repo) shadows the installed package — useful when iterating on the framework, irrelevant otherwise.
 
 ### Request flow
 
-[app/main.py](app/main.py) mounts four routers — `auth`, `api`, `admin`, `web` — and registers custom 401/403 handlers that branch on `/api/` path prefix: API paths get JSON/text errors, HTML paths redirect to `/auth/login` or render `403.html`. Auth is cookie-session (`SessionMiddleware`) storing only `user_pk`; the current user is resolved per-request by [get_current_user](app/deps.py) and role-gated via `require_viewer` / `require_editor` / `require_admin` dependencies. Templates receive the user via `request.state.user` (attached by the same dependencies).
+[app/main.py](app/main.py) mounts five routers — `health`, `auth`, `api`, `admin`, `web` — and registers custom 401/403 handlers that branch on `/api/` path prefix: API paths get JSON/text errors, HTML paths redirect to `/auth/login` or render `403.html`. Auth is cookie-session (`SessionMiddleware`) storing only `user_pk`; the current user is resolved per-request by [get_current_user](app/deps.py) and role-gated via `require_viewer` / `require_editor` / `require_admin` dependencies. Templates receive the user via `request.state.user` (attached by the same dependencies).
 
 ### Roles and the first-admin invariant
 

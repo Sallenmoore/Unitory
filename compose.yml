@@ -1,72 +1,81 @@
 services:
-  mongo:
-    image: mongo:7
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - mongo_data:/data/db
-    networks: [unitory]
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok", "--username", "${DB_USERNAME}", "--password", "${DB_PASSWORD}"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 10s
-
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    networks: [unitory]
-
-  web:
-    build: .
-    restart: unless-stopped
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    env_file: .env
-    environment:
-      DB_HOST: mongo
-      DB_PORT: "27017"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./app:/app/app
-      - ./autonomous:/app/autonomous
-      - ./worker:/app/worker
-    depends_on:
-      mongo:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    networks: [unitory]
-
-  worker:
-    build: .
-    restart: unless-stopped
-    command: /app/worker/entrypoint.sh
-    env_file: .env
-    environment:
-      DB_HOST: mongo
-      DB_PORT: "27017"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-    volumes:
-      - ./app:/app/app
-      - ./autonomous:/app/autonomous
-      - ./worker:/app/worker
-    depends_on:
-      mongo:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    networks: [unitory]
-
-volumes:
-  mongo_data:
-
-networks:
   unitory:
-    driver: bridge
+    build:
+      context: ../inventory
+    container_name: unitory
+    restart: unless-stopped
+    command: sh -c '[ -f /run/secrets/unitory.db.pass ] && export DB_PASSWORD="$$(cat /run/secrets/unitory.db.pass)"; export REDIS_PASSWORD=$$(cat /run/secrets/redis.pass); exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload'
+    env_file: ../inventory/.env
+    environment:
+      DB_HOST: mongo
+      DB_PORT: "27017"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      SESSION_SECRET_FILE: /run/secrets/unitory.session
+      GOOGLE_AUTH_CLIENT_SECRET_FILE: /run/secrets/unitory.google.secret
+    volumes:
+      - ../inventory/app:/app/app
+      - ../inventory/worker:/app/worker
+      - secrets:/run/secrets:ro
+    depends_on:
+      sops-decrypt:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://127.0.0.1:8000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+    # traefik
+      traefik.enable: "true"
+    # tcp traefik router
+      traefik.http.routers.unitory.rule: "Host(`unitory.bu-its.binghamton.edu`)"
+      traefik.http.routers.unitory.entrypoints: "websecure"
+      traefik.http.services.unitory.loadbalancer.server.port: "8000"
+    # allow bluecat-api to handle cname
+      bluecat.dns.enable: "true"
+    # wud
+      wud.watch: true
+      wud.watch.digest: true
+    networks:
+      - docknet
+  worker:
+    build:
+      context: ../inventory
+    container_name: unitory-worker
+    restart: unless-stopped
+    command: sh -c '[ -f /run/secrets/unitory.db.pass ] && export DB_PASSWORD="$$(cat /run/secrets/unitory.db.pass)"; export REDIS_PASSWORD=$$(cat /run/secrets/redis.pass); exec /app/worker/entrypoint.sh'
+    env_file: ../inventory/.env
+    environment:
+      DB_HOST: mongo
+      DB_PORT: "27017"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    volumes:
+      - ../inventory/app:/app/app
+      - ../inventory/worker:/app/worker
+      - secrets:/run/secrets:ro
+    depends_on:
+      sops-decrypt:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "/app/worker/healthcheck.py"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+    # wud
+      wud.watch: true
+      wud.watch.digest: true
+    networks:
+      - docknet
