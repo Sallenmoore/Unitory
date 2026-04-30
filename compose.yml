@@ -4,13 +4,15 @@ services:
       context: ../inventory
     container_name: unitory
     restart: unless-stopped
-    command: sh -c 'export REDIS_PASSWORD=$$(cat /run/secrets/redis.pass); exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload'
+    command: sh -c '[ -f /run/secrets/unitory.db.pass ] && export DB_PASSWORD="$$(cat /run/secrets/unitory.db.pass)"; export REDIS_PASSWORD=$$(cat /run/secrets/redis.pass); exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload'
     env_file: ../inventory/.env
     environment:
       DB_HOST: mongo
       DB_PORT: "27017"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
+      SESSION_SECRET_FILE: /run/secrets/unitory.session
+      GOOGLE_AUTH_CLIENT_SECRET_FILE: /run/secrets/unitory.google.secret
     volumes:
       - ../inventory/app:/app/app
       - ../inventory/worker:/app/worker
@@ -47,7 +49,7 @@ services:
       context: ../inventory
     container_name: unitory-worker
     restart: unless-stopped
-    command: sh -c 'export REDIS_PASSWORD=$$(cat /run/secrets/redis.pass); exec /app/worker/entrypoint.sh'
+    command: sh -c '[ -f /run/secrets/unitory.db.pass ] && export DB_PASSWORD="$$(cat /run/secrets/unitory.db.pass)"; export REDIS_PASSWORD=$$(cat /run/secrets/redis.pass); exec /app/worker/entrypoint.sh'
     env_file: ../inventory/.env
     environment:
       DB_HOST: mongo
