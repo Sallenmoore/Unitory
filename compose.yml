@@ -22,6 +22,18 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    labels:
+    # traefik
+      traefik.enable: "true"
+    # tcp traefik router
+      traefik.http.routers.unitory.rule: "Host(`unitory.bu-its.binghamton.edu`)"
+      traefik.http.routers.unitory.entrypoints: "websecure"
+      traefik.http.services.unitory.loadbalancer.server.port: "8000"
+    # allow bluecat-api to handle cname
+      bluecat.dns.enable: "true"
+    # wud
+      wud.watch: true
+      wud.watch.digest: true
     networks:
       - docknet
   worker:
@@ -47,5 +59,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    labels:
+    # wud
+      wud.watch: true
+      wud.watch.digest: true
     networks:
       - docknet
