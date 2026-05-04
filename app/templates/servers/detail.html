@@ -86,7 +86,20 @@
               <dt>Product</dt>   <dd>{{ server.product_name or "" }}</dd>
               <dt>Serial</dt>    <dd class="mono">{{ server.serial_number or "" }}</dd>
               <dt>Asset tag</dt> <dd class="mono">{{ server.asset_tag or "" }}</dd>
+              <dt>UUID</dt>      <dd class="mono">{{ server.product_uuid or "" }}</dd>
               <dt>Hypervisor</dt><dd class="mono">{{ server.hypervisor or "" }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header">Firmware</div>
+          <div class="card-body">
+            <dl class="kv-list">
+              <dt>BIOS vendor</dt>  <dd>{{ server.bios_vendor or "" }}</dd>
+              <dt>BIOS version</dt> <dd class="mono">{{ server.bios_version or "" }}</dd>
+              <dt>BIOS date</dt>    <dd class="mono">{{ server.bios_date or "" }}</dd>
             </dl>
           </div>
         </div>
@@ -97,9 +110,51 @@
           <div class="card-body">
             <dl class="kv-list">
               <dt>CPU</dt><dd class="mono">{{ server.cpu_model or "" }}{% if server.cpu_cores %} · {{ server.cpu_cores }} cores{% endif %}</dd>
+              <dt>Architecture</dt><dd class="mono">{{ server.architecture or "" }}</dd>
               <dt>RAM</dt><dd class="mono">{{ (server.ram_bytes / 1073741824) | round(1) if server.ram_bytes else "" }}{% if server.ram_bytes %} GB{% endif %}</dd>
               <dt>Disk</dt><dd class="mono">{{ (server.disk_bytes / 1073741824) | round(1) if server.disk_bytes else "" }}{% if server.disk_bytes %} GB{% endif %}</dd>
             </dl>
+          </div>
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">Storage</div>
+          <div class="card-body p-0">
+            {% if server.filesystems %}
+              <table class="table table-sm mb-0 align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Device</th>
+                    <th>Mount</th>
+                    <th>Type</th>
+                    <th class="text-end">Size</th>
+                    <th>UUID</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for fs in server.filesystems %}
+                    <tr>
+                      <td class="mono small">{{ fs.device }}</td>
+                      <td class="mono small">{{ fs.mountpoint }}</td>
+                      <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ fs.fstype }}</span></td>
+                      <td class="text-end mono small">{{ (fs.size_bytes / 1073741824) | round(1) }} GB</td>
+                      <td class="mono small text-muted">{{ fs.uuid or "—" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <div class="empty-state">No filesystem data captured yet.</div>
+            {% endif %}
+            {% if server.disks %}
+              <div class="px-3 py-2 border-top small text-muted">
+                <strong>Disks:</strong>
+                {% for d in server.disks %}
+                  <span class="mono">{{ d.device }}{% if d.model %} · {{ d.model }}{% endif %}{% if d.path %} · {{ d.path }}{% endif %}</span>{% if not loop.last %} &middot; {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -115,7 +170,12 @@
           <div class="card-body">
             <dl class="kv-list">
               <dt>OS</dt>        <dd class="mono">{{ server.os_name or "" }} {{ server.os_version or "" }}</dd>
+              <dt>Family</dt>    <dd class="mono">{{ server.os_id_like or server.os_id or "" }}</dd>
+              <dt>Codename</dt>  <dd class="mono">{{ server.os_codename or "" }}</dd>
               <dt>Kernel</dt>    <dd class="mono">{{ server.kernel or "" }}</dd>
+              <dt>Last boot</dt> <dd class="mono">{{ server.boot_time.strftime("%Y-%m-%d %H:%M %Z") if server.boot_time else "" }}</dd>
+              <dt>Timezone</dt>  <dd class="mono">{{ server.timezone or "" }}</dd>
+              <dt>Exporter</dt>  <dd class="mono">{{ server.exporter_version or "" }}</dd>
               <dt>Last scan</dt> <dd class="mono">{{ server.last_discovered.strftime("%Y-%m-%d %H:%M") if server.last_discovered else "never" }}</dd>
             </dl>
           </div>
@@ -127,11 +187,47 @@
           <div class="card-body">
             <dl class="kv-list">
               <dt>IPs</dt>     <dd class="mono">{{ (server.ip_addresses or []) | join(", ") }}</dd>
-              <dt>MACs</dt>    <dd class="mono">{{ (server.mac_addresses or []) | join(", ") }}</dd>
               <dt>VLAN</dt>    <dd class="mono">{{ server.vlan or "" }}</dd>
               <dt>Rack</dt>    <dd>{{ server.rack or "" }}</dd>
               <dt>Location</dt><dd>{{ server.location or "" }}</dd>
             </dl>
+          </div>
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">Interfaces</div>
+          <div class="card-body p-0">
+            {% if server.network_interfaces %}
+              <table class="table table-sm mb-0 align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Device</th>
+                    <th>MAC</th>
+                    <th>Operstate</th>
+                    <th>Adminstate</th>
+                    <th>Duplex</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for i in server.network_interfaces %}
+                    <tr>
+                      <td class="mono small">{{ i.device }}</td>
+                      <td class="mono small">{{ i.mac or "—" }}</td>
+                      <td>
+                        {% if i.operstate == "up" %}<span class="badge bg-success-subtle text-success-emphasis">{{ i.operstate }}</span>
+                        {% elif i.operstate %}<span class="badge bg-secondary-subtle text-secondary-emphasis">{{ i.operstate }}</span>
+                        {% else %}—{% endif %}
+                      </td>
+                      <td class="mono small">{{ i.adminstate or "—" }}</td>
+                      <td class="mono small">{{ i.duplex or "—" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <div class="empty-state">No interface data captured yet.</div>
+            {% endif %}
           </div>
         </div>
       </div>

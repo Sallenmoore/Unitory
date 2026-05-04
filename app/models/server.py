@@ -21,16 +21,31 @@ DISCOVERY_FIELDS = frozenset(
         "ip_addresses",
         "mac_addresses",
         "server_type",
+        "hypervisor",
         "os_name",
         "os_version",
+        "os_id",
+        "os_id_like",
+        "os_codename",
         "kernel",
+        "architecture",
         "cpu_model",
         "cpu_cores",
         "ram_bytes",
         "disk_bytes",
         "vendor",
         "product_name",
+        "product_uuid",
         "serial_number",
+        "bios_vendor",
+        "bios_version",
+        "bios_date",
+        "boot_time",
+        "exporter_version",
+        "timezone",
+        "filesystems",
+        "network_interfaces",
+        "disks",
         "last_discovered",
         "discovery_data",
     }
@@ -50,7 +65,11 @@ class Server(AutoModel):
 
     os_name = StringAttr()
     os_version = StringAttr()
+    os_id = StringAttr()
+    os_id_like = StringAttr()
+    os_codename = StringAttr()
     kernel = StringAttr()
+    architecture = StringAttr()
 
     cpu_model = StringAttr()
     cpu_cores = IntAttr()
@@ -59,8 +78,20 @@ class Server(AutoModel):
 
     vendor = StringAttr()
     product_name = StringAttr()
+    product_uuid = StringAttr()
     serial_number = StringAttr()
     asset_tag = StringAttr()
+    bios_vendor = StringAttr()
+    bios_version = StringAttr()
+    bios_date = StringAttr()
+
+    boot_time = DateTimeAttr()
+    exporter_version = StringAttr()
+    timezone = StringAttr()
+
+    filesystems = ListAttr(DictAttr())
+    network_interfaces = ListAttr(DictAttr())
+    disks = ListAttr(DictAttr())
 
     rack = StringAttr()
     location = StringAttr()
@@ -108,15 +139,29 @@ class Server(AutoModel):
             "hypervisor": self.hypervisor,
             "os_name": self.os_name,
             "os_version": self.os_version,
+            "os_id": self.os_id,
+            "os_id_like": self.os_id_like,
+            "os_codename": self.os_codename,
             "kernel": self.kernel,
+            "architecture": self.architecture,
             "cpu_model": self.cpu_model,
             "cpu_cores": self.cpu_cores,
             "ram_bytes": self.ram_bytes,
             "disk_bytes": self.disk_bytes,
             "vendor": self.vendor,
             "product_name": self.product_name,
+            "product_uuid": self.product_uuid,
             "serial_number": self.serial_number,
             "asset_tag": self.asset_tag,
+            "bios_vendor": self.bios_vendor,
+            "bios_version": self.bios_version,
+            "bios_date": self.bios_date,
+            "boot_time": _iso(self.boot_time),
+            "exporter_version": self.exporter_version,
+            "timezone": self.timezone,
+            "filesystems": list(self.filesystems or []),
+            "network_interfaces": list(self.network_interfaces or []),
+            "disks": list(self.disks or []),
             "rack": self.rack,
             "location": self.location,
             "vlan": self.vlan,

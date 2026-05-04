@@ -3,10 +3,19 @@
 node_uname_info{domainname="(none)",machine="x86_64",nodename="host1.binghamton.edu",release="5.14.0-362.8.1.el9_3.x86_64",sysname="Linux",version="#1 SMP PREEMPT_DYNAMIC Wed Sep 13"} 1
 # HELP node_os_info A metric with a constant '1' value labeled by os information.
 # TYPE node_os_info gauge
-node_os_info{id="rocky",id_like="rhel centos fedora",name="Rocky Linux",pretty_name="Rocky Linux 9.3 (Blue Onyx)",version="9.3 (Blue Onyx)",version_id="9.3"} 1
+node_os_info{id="rocky",id_like="rhel centos fedora",name="Rocky Linux",pretty_name="Rocky Linux 9.3 (Blue Onyx)",version="9.3 (Blue Onyx)",version_codename="blue_onyx",version_id="9.3"} 1
 # HELP node_dmi_info A metric with a constant '1' value labeled by dmi information.
 # TYPE node_dmi_info gauge
-node_dmi_info{bios_date="10/10/2023",bios_vendor="Dell Inc.",board_vendor="Dell Inc.",chassis_vendor="Dell Inc.",product_name="PowerEdge R740",product_serial="ABC12345",system_vendor="Dell Inc."} 1
+node_dmi_info{bios_date="10/10/2023",bios_vendor="Dell Inc.",bios_version="2.18.1",board_vendor="Dell Inc.",chassis_vendor="Dell Inc.",product_name="PowerEdge R740",product_serial="ABC12345",product_uuid="4c4c4544-0042-4310-8033-c8c04f4d3032",system_vendor="Dell Inc."} 1
+# HELP node_exporter_build_info A metric with a constant '1' value labeled by version, revision, branch, goversion from which node_exporter was built.
+# TYPE node_exporter_build_info gauge
+node_exporter_build_info{branch="HEAD",goarch="amd64",goos="linux",goversion="go1.22.5",revision="abc",tags="unknown",version="1.8.2"} 1
+# HELP node_boot_time_seconds Node boot time, in unixtime.
+# TYPE node_boot_time_seconds gauge
+node_boot_time_seconds 1.7e+09
+# HELP node_time_zone_offset_seconds System time zone offset in seconds.
+# TYPE node_time_zone_offset_seconds gauge
+node_time_zone_offset_seconds{time_zone="America/New_York"} -14400
 # HELP node_memory_MemTotal_bytes Memory information field MemTotal_bytes.
 # TYPE node_memory_MemTotal_bytes gauge
 node_memory_MemTotal_bytes 1.34925033472e+11
@@ -21,7 +30,22 @@ node_cpu_seconds_total{cpu="1",mode="user"} 230.0
 node_filesystem_size_bytes{device="/dev/sda1",fstype="xfs",mountpoint="/"} 5.0e+11
 node_filesystem_size_bytes{device="/dev/sda2",fstype="xfs",mountpoint="/var"} 1.0e+11
 node_filesystem_size_bytes{device="tmpfs",fstype="tmpfs",mountpoint="/dev/shm"} 64000000
+# HELP node_disk_filesystem_info Info about disk filesystem.
+# TYPE node_disk_filesystem_info gauge
+node_disk_filesystem_info{device="sda1",type="xfs",usage="filesystem",uuid="aaaa-1111",version=""} 1
+node_disk_filesystem_info{device="sda2",type="xfs",usage="filesystem",uuid="bbbb-2222",version=""} 1
+# HELP node_disk_info Info of /sys/block/<block_device>.
+# TYPE node_disk_info gauge
+node_disk_info{device="sda",major="8",minor="0",model="PERC H730P Mini",path="pci-0000:18:00.0-scsi-0:2:0:0",revision="4.30",serial="DEADBEEF",wwn="0x600508"} 1
+node_disk_info{device="sdb",major="8",minor="16",model="PERC H730P Mini",path="pci-0000:18:00.0-scsi-0:2:1:0",revision="4.30",serial="CAFEBABE",wwn="0x600509"} 1
+node_disk_info{device="dm-0",major="252",minor="0",model="",path="",revision="",serial="",wwn=""} 1
+node_disk_info{device="loop0",major="7",minor="0",model="",path="",revision="",serial="",wwn=""} 1
 # HELP node_network_address_info Node network address info.
 # TYPE node_network_address_info gauge
 node_network_address_info{address="10.0.1.5",device="eth0"} 1
 node_network_address_info{address="10.0.1.6",device="eth1"} 1
+# HELP node_network_info Network device info.
+# TYPE node_network_info gauge
+node_network_info{address="00:00:00:00:00:00",adminstate="up",broadcast="00:00:00:00:00:00",device="lo",duplex="",ifalias="",operstate="unknown"} 1
+node_network_info{address="aa:bb:cc:dd:ee:01",adminstate="up",broadcast="ff:ff:ff:ff:ff:ff",device="eth0",duplex="full",ifalias="",operstate="up"} 1
+node_network_info{address="aa:bb:cc:dd:ee:02",adminstate="up",broadcast="ff:ff:ff:ff:ff:ff",device="eth1",duplex="full",ifalias="",operstate="up"} 1

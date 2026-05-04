@@ -1,0 +1,54 @@
+# Sanitized excerpt of rsctdb.cc.binghamton.edu:9100 (node_exporter 1.8.2 on
+# Oracle Linux 7). Captures the older-exporter quirks the new parser needs to
+# tolerate:
+#   - node_network_address_info IS NOT EMITTED (no IPs in /metrics → DNS fallback)
+#   - node_disk_info has no per-disk size metric to join against
+#   - node_dmi_info reports VMware as system_vendor
+# product_uuid and product_serial replaced with placeholders.
+# HELP node_uname_info Labeled system information as provided by the uname system call.
+# TYPE node_uname_info gauge
+node_uname_info{domainname="(none)",machine="x86_64",nodename="rsctdb.cc.binghamton.edu",release="5.4.17-2136.338.4.2.el7uek.x86_64",sysname="Linux",version="#3 SMP Mon Dec 23 14:42:43 PST 2024"} 1
+# HELP node_os_info A metric with a constant '1' value labeled by os information.
+# TYPE node_os_info gauge
+node_os_info{build_id="",id="ol",id_like="fedora",image_id="",image_version="",name="Oracle Linux Server",pretty_name="Oracle Linux Server 7.9",variant="Server",variant_id="server",version="7.9",version_codename="",version_id="7.9"} 1
+# HELP node_dmi_info A metric with a constant '1' value labeled by dmi information.
+# TYPE node_dmi_info gauge
+node_dmi_info{bios_date="11/12/2020",bios_vendor="Phoenix Technologies LTD",bios_version="6.00",board_asset_tag="",board_name="440BX Desktop Reference Platform",board_serial="None",board_vendor="Intel Corporation",board_version="None",chassis_asset_tag="No Asset Tag",chassis_serial="None",chassis_vendor="No Enclosure",chassis_version="N/A",product_family="",product_name="VMware Virtual Platform",product_serial="REDACTED-SERIAL",product_sku="",product_uuid="00000000-0000-0000-0000-000000000000",product_version="None",system_vendor="VMware, Inc."} 1
+# HELP node_exporter_build_info node_exporter build info.
+# TYPE node_exporter_build_info gauge
+node_exporter_build_info{branch="HEAD",goarch="amd64",goos="linux",goversion="go1.22.5",revision="f1e0e8360aa60b6cb5e5cc1560bed348fc2c1895",tags="unknown",version="1.8.2"} 1
+# HELP node_boot_time_seconds Node boot time, in unixtime.
+# TYPE node_boot_time_seconds gauge
+node_boot_time_seconds 1.75819533e+09
+# HELP node_time_zone_offset_seconds System time zone offset in seconds.
+# TYPE node_time_zone_offset_seconds gauge
+node_time_zone_offset_seconds{time_zone="EDT"} -14400
+# HELP node_memory_MemTotal_bytes Memory information field MemTotal_bytes.
+# TYPE node_memory_MemTotal_bytes gauge
+node_memory_MemTotal_bytes 1.6500e+10
+# HELP node_cpu_seconds_total Seconds the CPUs spent in each mode.
+# TYPE node_cpu_seconds_total counter
+node_cpu_seconds_total{cpu="0",mode="idle"} 1.0
+node_cpu_seconds_total{cpu="1",mode="idle"} 1.0
+node_cpu_seconds_total{cpu="2",mode="idle"} 1.0
+node_cpu_seconds_total{cpu="3",mode="idle"} 1.0
+# HELP node_filesystem_size_bytes Filesystem size in bytes.
+# TYPE node_filesystem_size_bytes gauge
+node_filesystem_size_bytes{device="/dev/mapper/ol_rhel7lamp-root",device_error="",fstype="xfs",mountpoint="/"} 5.36608768e+10
+node_filesystem_size_bytes{device="/dev/mapper/ol_rhel7lamp-home",device_error="",fstype="xfs",mountpoint="/home"} 1.02567735296e+11
+node_filesystem_size_bytes{device="/dev/sda1",device_error="",fstype="xfs",mountpoint="/boot"} 5.20794112e+08
+node_filesystem_size_bytes{device="tmpfs",device_error="",fstype="tmpfs",mountpoint="/run"} 8.38180864e+09
+# HELP node_disk_filesystem_info Info about disk filesystem.
+# TYPE node_disk_filesystem_info gauge
+node_disk_filesystem_info{device="dm-0",type="xfs",usage="filesystem",uuid="fe9e638c-104a-4ae8-9618-b839fdfaf471",version=""} 1
+node_disk_filesystem_info{device="dm-4",type="xfs",usage="filesystem",uuid="88f92535-4c49-486d-9f88-236a9560057c",version=""} 1
+# HELP node_disk_info Info of /sys/block/<block_device>.
+# TYPE node_disk_info gauge
+node_disk_info{device="sda",major="8",minor="0",model="Virtual_disk",path="pci-0000:00:10.0-scsi-0:0:0:0",revision="2.0",serial="",wwn=""} 1
+node_disk_info{device="sdb",major="8",minor="16",model="Virtual_disk",path="pci-0000:00:10.0-scsi-0:0:1:0",revision="2.0",serial="",wwn=""} 1
+node_disk_info{device="sr0",major="11",minor="0",model="VMware_Virtual_IDE_CDROM_Drive",path="pci-0000:00:07.1-ata-2.0",revision="00000001",serial="10000000000000000001",wwn=""} 1
+node_disk_info{device="dm-0",major="252",minor="0",model="",path="",revision="",serial="",wwn=""} 1
+# HELP node_network_info Network device info.
+# TYPE node_network_info gauge
+node_network_info{address="00:00:00:00:00:00",adminstate="up",broadcast="00:00:00:00:00:00",device="lo",duplex="",ifalias="",operstate="unknown"} 1
+node_network_info{address="00:50:56:a2:77:83",adminstate="up",broadcast="ff:ff:ff:ff:ff:ff",device="ens160",duplex="full",ifalias="",operstate="up"} 1
