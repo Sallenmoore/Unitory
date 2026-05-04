@@ -1,0 +1,40 @@
+{# Returned by POST /servers/{pk}/rescan and GET /servers/{pk}/rescan-status.
+   Shows the current state of a single-host discovery job and self-polls
+   every 2s while queued/running. On finish, swaps in a "scan complete"
+   message that suggests reloading the page to see fresh fields. #}
+<div id="rescan-status"
+     class="alert alert-{% if job.state == 'finished' %}success{% elif job.state == 'failed' %}danger{% else %}info{% endif %} d-flex align-items-center gap-2 mb-3"
+     role="status"
+     {% if job.state in ("queued", "running") %}
+       hx-get="/servers/{{ server.pk }}/rescan-status?job={{ job.pk }}"
+       hx-trigger="every 2s"
+       hx-swap="outerHTML"
+       hx-target="#rescan-status"
+     {% endif %}>
+  {% if job.state == "queued" %}
+    <i class="bi bi-hourglass-split"></i>
+    <span>Rescan queued (job <code>{{ job.pk }}</code>)…</span>
+  {% elif job.state == "running" %}
+    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+    <span>Rescanning <strong class="mono">{{ server.hostname }}</strong>…</span>
+  {% elif job.state == "finished" %}
+    <i class="bi bi-check-circle"></i>
+    <span>
+      Scan complete — {{ job.summary() }}.
+      <a href="/servers/{{ server.pk }}" class="alert-link">Reload</a> to see updated fields.
+    </span>
+  {% elif job.state == "failed" %}
+    <i class="bi bi-x-octagon"></i>
+    <span>
+      Scan failed.
+      {% if job.errors %}
+        <details class="d-inline">
+          <summary class="d-inline">{{ job.errors|length }} error(s)</summary>
+          <ul class="list-unstyled mt-2 small mb-0">
+            {% for e in job.errors %}<li><code>{{ e.hostname }}</code> · {{ e.error }}</li>{% endfor %}
+          </ul>
+        </details>
+      {% endif %}
+    </span>
+  {% endif %}
+</div>

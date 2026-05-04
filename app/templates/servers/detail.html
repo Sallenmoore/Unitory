@@ -21,6 +21,12 @@
   </div>
   <div class="actions">
     {% if request.state.user and request.state.user.is_editor %}
+      <button type="button" class="btn btn-outline-primary"
+              hx-post="/servers/{{ server.pk }}/rescan"
+              hx-target="#rescan-status"
+              hx-swap="outerHTML">
+        <i class="bi bi-arrow-clockwise me-1"></i>Rescan
+      </button>
       <a href="/servers/{{ server.pk }}/edit" class="btn btn-primary"><i class="bi bi-pencil me-1"></i>Edit</a>
     {% endif %}
     <a href="/api/servers/{{ server.pk }}" target="_blank" rel="noopener" class="btn btn-outline-secondary"><i class="bi bi-braces me-1"></i>JSON</a>
@@ -32,6 +38,8 @@
     {% endif %}
   </div>
 </div>
+
+<div id="rescan-status"></div>
 
 <ul class="nav nav-tabs" role="tablist">
   <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-ops"   type="button">Operations</button></li>

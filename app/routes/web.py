@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.deps import require_admin, require_editor, require_viewer, templates
+from app.models.discovery_job import DiscoveryJob
 from app.models.server import ENVIRONMENTS, SERVER_TYPES, STATUSES, Server
 from app.models.user import AppUser
+from app.services.discovery import enqueue_scan
 from app.services.markdown import render_markdown
 
 router = APIRouter(tags=["web"])
@@ -156,6 +158,55 @@ async def delete_server(
         raise HTTPException(status_code=404)
     server.delete()
     return RedirectResponse(url="/servers", status_code=303)
+
+
+@router.post("/servers/{server_id}/rescan", response_class=HTMLResponse)
+async def rescan_server(
+    request: Request,
+    server_id: str,
+    user: AppUser = Depends(require_editor),
+):
+    """Re-enqueue a single-host discovery scan from the server detail page.
+
+    Refuses to start a new scan if one is already queued or running for this
+    hostname — returns the existing job's status partial instead, so repeated
+    clicks don't fan out into duplicate jobs.
+    """
+    server = Server.get(server_id)
+    if not server:
+        raise HTTPException(status_code=404)
+
+    job = _existing_pending_job(server.hostname) or enqueue_scan(
+        [server.hostname], port=9100, requested_by=user.email
+    )
+    return templates.TemplateResponse(
+        request, "partials/rescan_status.html", {"server": server, "job": job}
+    )
+
+
+@router.get("/servers/{server_id}/rescan-status", response_class=HTMLResponse)
+async def rescan_status(
+    request: Request,
+    server_id: str,
+    job: str = Query(...),
+    user: AppUser = Depends(require_viewer),
+):
+    server = Server.get(server_id)
+    if not server:
+        raise HTTPException(status_code=404)
+    job_record = DiscoveryJob.get(job)
+    if not job_record:
+        raise HTTPException(status_code=404)
+    return templates.TemplateResponse(
+        request, "partials/rescan_status.html", {"server": server, "job": job_record}
+    )
+
+
+def _existing_pending_job(hostname: str) -> DiscoveryJob | None:
+    for j in DiscoveryJob.objects.order_by("-last_updated")[:50]:
+        if j.state in ("queued", "running") and hostname in (j.hostnames or []):
+            return j
+    return None
 
 
 @router.post("/servers/preview-notes", response_class=HTMLResponse)
